@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	corev1alpha1 "github.com/kuberik/kuberik/pkg/apis/core/v1alpha1"
-	"github.com/kuberik/kuberik/pkg/engine"
-	"github.com/kuberik/kuberik/pkg/engine/scheduler"
+	corev1alpha1 "github.com/kuberik/engine/pkg/apis/core/v1alpha1"
+	"github.com/kuberik/engine/pkg/engine"
+	"github.com/kuberik/engine/pkg/engine/scheduler"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

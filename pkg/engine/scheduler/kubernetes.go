@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	corev1alpha1 "github.com/kuberik/kuberik/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/kuberik/engine/pkg/apis/core/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"

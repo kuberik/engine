@@ -3,8 +3,8 @@ package engine
 import (
 	"fmt"
 
-	corev1alpha1 "github.com/kuberik/kuberik/pkg/apis/core/v1alpha1"
-	"github.com/kuberik/kuberik/pkg/engine/scheduler"
+	corev1alpha1 "github.com/kuberik/engine/pkg/apis/core/v1alpha1"
+	"github.com/kuberik/engine/pkg/engine/scheduler"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 )
