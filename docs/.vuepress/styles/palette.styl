@@ -1,0 +1,327 @@
+@import url(https://fonts.googleapis.com/css?family=Montserrat);
+$mainTeal = #1CBFA9
+
+$darkShade01 = #2A2D34
+$darkShade02 = #25272D
+$darkShade03 = #1E2126
+
+$accentColor = $mainTeal
+$badgeWarningColor = #FFC43D
+$badgeErrorColor = #FF5352
+
+@-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
+@-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
+@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+
+$bg-color = #181A22
+$MQNarrow = 959px
+$MQMobile = 719px
+$MQMobileNarrow = 419px
+
+html
+  height 100%
+
+body
+  background-color $bg-color
+  min-height 100%
+  color desaturate(lighten($bg-color, 80%), 50%)
+
+.search-box
+  input
+    border-color desaturate(lighten($bg-color, 30%), 30%)
+    background-color $bg-color
+    color desaturate(lighten($bg-color, 80%), 50%)
+  .suggestions
+    background-color desaturate(lighten($bg-color, 15%), 10%)
+    border 0
+  .suggestion
+    a
+      color desaturate(lighten($bg-color, 80%), 50%)
+
+    &.focused
+      background-color desaturate(lighten($bg-color, 30%), 30%)
+      a
+        color #fff
+
+.algolia-search-wrapper
+  .algolia-autocomplete
+    .ds-dropdown-menu
+      border: 0
+      background-color desaturate(lighten($bg-color, 15%), 10%)
+
+      &:before
+        background-color desaturate(lighten($bg-color, 15%), 10%)
+        border: 0;
+
+@media (min-width: $MQMobile)
+  .dropdown-wrapper
+    .nav-dropdown
+      background-color desaturate(lighten($bg-color, 15%), 10%)
+      border 0
+
+      .dropdown-item
+        h4
+          border-top-color desaturate(lighten($bg-color, 30%), 30%)
+
+.sw-update-popup
+  background-color desaturate(lighten($bg-color, 15%), 10%)
+  border 0
+
+.navbar
+  border-bottom-color desaturate(lighten($bg-color, 10%), 10%)
+  background-color $bg-color
+
+  .site-name
+    color #fff
+    font-family Montserrat
+
+  .links
+    background-color $bg-color
+
+.page-edit
+  .edit-link
+    a
+      color desaturate(lighten($bg-color, 50%), 50%)
+
+      &:hover,
+      &:focus
+        color #fff
+  .last-updated
+    .prefix
+      color desaturate(lighten($bg-color, 50%), 50%)
+
+    .time
+      color desaturate(lighten($bg-color, 40%), 50%)
+
+h2
+  border-bottom-color desaturate(lighten($bg-color, 10%), 10%)
+
+hr
+  border-top-color desaturate(lighten($bg-color, 10%), 10%)
+
+.page-nav
+  .inner
+    color desaturate(lighten($bg-color, 50%), 50%)
+    border-top-color desaturate(lighten($bg-color, 10%), 10%)
+
+.sidebar
+  background-color $bg-color
+  border-right-color desaturate(lighten($bg-color, 10%), 10%)
+
+  .nav-links
+    border-bottom-color desaturate(lighten($bg-color, 10%), 10%)
+
+  a.sidebar-link
+    color desaturate(lighten($bg-color, 80%), 50%)
+
+    &:hover,
+    &:focus,
+    &.active
+      color lighten($accentColor, 10%)
+
+  .sidebar-heading
+    color desaturate(lighten($bg-color, 80%), 50%)
+
+    &.open,
+    &:hover
+      color #fff
+
+.nav-links
+  a
+    color desaturate(lighten($bg-color, 80%), 50%)
+
+    &:hover,
+    &:focus,
+    &.router-link-active
+      color #fff
+
+.home
+  .hero
+    #main-title
+      font-family Montserrat
+    .description
+      color desaturate(lighten($bg-color, 50%), 50%)
+    .action-button
+      border 0
+      background linear-gradient(222deg, rgba(28,191,169,1) 0%, rgba(66,175,185,1) 58%, rgba(69,140,153,1) 100%)
+      &:hover
+        background linear-gradient(222deg, lighten(rgba(28,191,169,1), 5%) 0%, lighten(rgba(66,175,185,1), 5%) 58%, lighten(rgba(69,140,153,1), 5%) 100%)
+  .features,
+  .footer
+    border-top-color desaturate(lighten($bg-color, 10%), 10%)
+  .feature
+    h2
+      color desaturate(lighten($bg-color, 70%), 40%)
+    p
+      color desaturate(lighten($bg-color, 50%), 50%)
+  .footer
+    color desaturate(lighten($bg-color, 50%), 50%)
+
+.custom-block.tip
+  background-color lighten($bg-color, 5%)
+  border-color $mainTeal
+  color desaturate(lighten($bg-color, 80%), 50%)
+
+.custom-block.warning
+  background-color lighten($bg-color, 5%)
+  color desaturate(lighten($bg-color, 80%), 50%)
+
+.custom-block.danger
+  .custom-block-title
+    color $badgeErrorColor
+  border-color $badgeErrorColor
+  background-color lighten($bg-color, 5%)
+  color desaturate(lighten($bg-color, 80%), 50%)
+  a
+   color lighten($accentColor, 10%)
+
+tr:nth-child(n)
+  background-color lighten($bg-color, 5%)
+  color desaturate(lighten($bg-color, 80%), 50%)
+
+.theme-default-content
+  code
+    background-color lighten($bg-color, 5%)
+    color desaturate($accentColor, 10%)
+
+code[class*="language-"], pre[class*="language-"]
+  font-size 1em
+  line-height 1.5em
+
+div[class*="language-"]
+  .highlight-lines
+    .highlighted
+        background-color rgba(255,255,255,0.1)
+
+# code theme
+code[class*="language-"],
+pre[class*="language-"]
+    font-family Consolas, Menlo, Monaco, "Andale Mono WT", "Andale Mono", "Lucida Console", "Lucida Sans Typewriter", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Liberation Mono", "Nimbus Mono L", "Courier New", Courier, monospace
+    font-size 14px
+    line-height 1.375
+    direction ltr
+    text-align left
+    white-space pre
+    word-spacing normal
+    word-break normal
+    -moz-tab-size 4
+    -o-tab-size 4
+    tab-size 4
+    -webkit-hyphens none
+    -moz-hyphens none
+    -ms-hyphens none
+    hyphens none
+    background #1d262f
+    color #57718e
+
+pre
+    & > code[class*="language-"]
+        font-size 1em
+    & > code
+        &.highlight
+            outline .4em solid #34659d
+            outline-offset .4em
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection
+    text-shadow none
+    background #335C67
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection
+    text-shadow none
+    background #335C67
+
+pre[class*="language-"]
+    padding 1em
+    margin .5em 0
+    overflow auto
+
+:not(pre)
+    & > code[class*="language-"]
+        padding .1em
+        border-radius .3em
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata
+    color #4a5f78
+
+.token
+    &.punctuation
+        color #fff
+    &.namespace
+        opacity .7
+    &.deleted
+        text-decoration line-through
+    &.inserted
+        border-bottom 1px dotted #ebf4ff
+        text-decoration none
+    &.italic
+        font-style italic
+    &.important
+        color #48a6ce
+    &.entity
+        cursor help
+
+.token.tag,
+.token.operator,
+.token.boolean,
+.token.number
+    color #EDAA5A
+
+.token.property,
+.token.function
+    color #57718e
+
+.token.tag-id,
+.token.selector,
+.token.atrule-id
+    color #ebf4ff
+
+code.language-javascript,
+.token.attr-name
+    color #7eb6f6
+
+code.language-css,
+code.language-scss,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.language-scss .token.string,
+.style .token.string,
+.token.attr-value,
+.token.keyword,
+.token.control,
+.token.directive,
+.token.unit,
+.token.statement,
+.token.regex,
+.token.atrule
+    color #1CBFA9
+
+.token.string
+    color #FFD063
+
+.token.placeholder,
+.token.variable
+    color #1CBFA9
+
+.token.important,
+.token.bold
+    font-weight bold
+
+.line-numbers
+    .line-numbers-rows
+        border-right-color #1f2932
+
+.line-numbers-rows
+    & > span
+        &:before
+            color #2c3847
+
+.line-highlight
+    background rgba(10, 163, 112, 0.2)
+    background -webkit-linear-gradient(left, rgba(10, 163, 112, 0.2) 70%, rgba(10, 163, 112, 0))
+    background linear-gradient(to right, rgba(10, 163, 112, 0.2) 70%, rgba(10, 163, 112, 0))

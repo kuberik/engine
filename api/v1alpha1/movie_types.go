@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,8 +30,18 @@ type MovieSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Movie. Edit Movie_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// TODO remove this
+	Template PlayTemplate `json:"template"`
+	// +optional
+	FailedJobsHistoryLimit int `json:"failedJobsHistoryLimit"`
+	// +optional
+	SuccessfulJobsHistoryLimit int `json:"successfulJobsHistoryLimit"`
+}
+
+// PlayTemplate defines a template of Play to be created from a Movie
+type PlayTemplate struct {
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              PlaySpec `json:"spec,omitempty"`
 }
 
 // MovieStatus defines the observed state of Movie
@@ -48,6 +60,31 @@ type Movie struct {
 
 	Spec   MovieSpec   `json:"spec,omitempty"`
 	Status MovieStatus `json:"status,omitempty"`
+}
+
+// TODO remove
+func (m *Movie) GeneratePlay(vars ...Var) (*Play, error) {
+	play := &Play{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: fmt.Sprintf("%s-", m.Name),
+			Namespace:    m.Namespace,
+		},
+		Spec: m.Spec.Template.Spec,
+	}
+
+	for _, v := range vars {
+		if err := play.Spec.Vars.Set(v.Name, *v.Value); err != nil {
+			// There might be more provided vars than play requires
+			continue
+		}
+	}
+	for _, v := range vars {
+		if v.Value == nil {
+			return nil, fmt.Errorf("Missing required variable: %s", v.Name)
+		}
+	}
+
+	return play, nil
 }
 
 // +kubebuilder:object:root=true

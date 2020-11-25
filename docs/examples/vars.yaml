@@ -1,0 +1,24 @@
+---
+apiVersion: core.kuberik.io/v1alpha1
+kind: Movie
+metadata:
+  name: vars
+spec:
+  template:
+    spec:
+      vars:
+      - name: FOO
+        value: bar
+      screenplays:
+      - name: main
+        scenes:
+        - name: vars
+          frames:
+          - name: vars
+            action:
+              template:
+                spec:
+                  containers:
+                  - image: "alpine:latest"
+                    command: ["echo"]
+                    args: ["$(FOO)"]

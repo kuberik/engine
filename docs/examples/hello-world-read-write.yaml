@@ -1,0 +1,45 @@
+---
+apiVersion: core.kuberik.io/v1alpha1
+kind: Movie
+metadata:
+  name: hello-world-read-write
+spec:
+  template:
+    spec:
+      volumeClaimTemplates:
+      - metadata:
+          name: shared
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          resources:
+            requests:
+              storage: 1Gi
+      screenplays:
+      - name: main
+        scenes:
+        - name: write-hello-world
+          frames:
+          - name: hello-world
+            action:
+              template:
+                spec:
+                  containers:
+                  - name: writer
+                    image: "alpine:latest"
+                    command: ["sh", "-c"]
+                    args: ["echo 'Hello World!' > /shared/hello.txt"]
+                    volumeMounts: &mounts
+                    - name: shared
+                      mountPath: /shared
+        - name: read-hello-world
+          frames:
+          - name: hello-world
+            action:
+              template:
+                spec:
+                  containers:
+                  - name: reader
+                    image: "alpine:latest"
+                    command: ["sh", "-c"]
+                    args: ["cat /shared/hello.txt"]
+                    volumeMounts: *mounts

@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,15 +29,61 @@ type PlaySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Play. Edit Play_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Screenplays          []Screenplay                   `json:"screenplays"`
+	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
+	Vars                 Vars                           `json:"vars,omitempty"`
 }
 
 // PlayStatus defines the observed state of Play
 type PlayStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	Frames             map[string]FrameResult `json:"frames,omitempty"`
+	Phase              PlayPhaseType          `json:"phase,omitempty"`
+	ProvisionedVolumes map[string]string      `json:"provisionedVolumes,omitempty"`
+	VarsConfigMap      string                 `json:"varsConfigMap,omitempty"`
 }
+
+// SetFrameStatus sets result of a frame
+func (ps *PlayStatus) SetFrameStatus(frameID string, result FrameResult) {
+	if ps.Frames == nil {
+		ps.Frames = make(map[string]FrameResult)
+	}
+	ps.Frames[frameID] = result
+}
+
+// Failed checks if a play failed
+func (ps *PlayStatus) Failed() bool {
+	if ps.Frames == nil {
+		return false
+	}
+	for _, r := range ps.Frames {
+		if r == FrameResultFailed {
+			return true
+		}
+	}
+	return false
+}
+
+// PlayPhaseType defines the phase of a Play
+type PlayPhaseType string
+
+// These are valid phases of a play.
+const (
+	// PlayPhaseComplete means the play has completed its execution.
+	PlayPhaseComplete PlayPhaseType = "Complete"
+	// PlayPhaseInit means the play is in initializing phase
+	PlayPhaseInit PlayPhaseType = "Init"
+	// PlayPhaseFailed means the play has failed its execution.
+	PlayPhaseFailed PlayPhaseType = "Failed"
+	// PlayPhaseRunning means the play is executing.
+	PlayPhaseRunning PlayPhaseType = "Running"
+	// PlayPhaseRunning means the play has been created.
+	PlayPhaseCreated PlayPhaseType = "Created"
+	// PlayPhaseError means the play ended because of an error.
+	PlayPhaseError PlayPhaseType = "Error"
+)
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -48,6 +95,61 @@ type Play struct {
 
 	Spec   PlaySpec   `json:"spec,omitempty"`
 	Status PlayStatus `json:"status,omitempty"`
+}
+
+// Frame gets a frame with specified identifier
+func (p *Play) Frame(frameID string) *Frame {
+	for spi, screenplay := range p.Spec.Screenplays {
+		for sci, scene := range screenplay.Scenes {
+			for fi, frame := range scene.Frames {
+				if frame.ID == frameID {
+					return &p.Spec.Screenplays[spi].Scenes[sci].Frames[fi]
+				}
+			}
+		}
+		for fi, frame := range screenplay.Credits.Opening {
+			if frame.ID == frameID {
+				return &p.Spec.Screenplays[spi].Credits.Opening[fi]
+			}
+		}
+		for fi, frame := range screenplay.Credits.Closing {
+			if frame.ID == frameID {
+				return &p.Spec.Screenplays[spi].Credits.Closing[fi]
+			}
+		}
+	}
+	return nil
+}
+
+// Screenplay gets a Screenplay with specified name
+func (p *Play) Screenplay(name string) *Screenplay {
+	for spi, screenplay := range p.Spec.Screenplays {
+		if screenplay.Name == name {
+			return &p.Spec.Screenplays[spi]
+		}
+	}
+	return nil
+}
+
+// AllFrames returns references to all Frames in the Play
+func (p *Play) AllFrames() (frames []*Frame) {
+	playSpec := &p.Spec
+	for k := range playSpec.Screenplays {
+		for i := range playSpec.Screenplays[k].Scenes {
+			for j := range playSpec.Screenplays[k].Scenes[i].Frames {
+				frames = append(frames, &playSpec.Screenplays[k].Scenes[i].Frames[j])
+			}
+		}
+		if playSpec.Screenplays[k].Credits != nil {
+			for i := range playSpec.Screenplays[k].Credits.Opening {
+				frames = append(frames, &playSpec.Screenplays[k].Credits.Opening[i])
+			}
+			for i := range playSpec.Screenplays[k].Credits.Closing {
+				frames = append(frames, &playSpec.Screenplays[k].Credits.Closing[i])
+			}
+		}
+	}
+	return
 }
 
 // +kubebuilder:object:root=true

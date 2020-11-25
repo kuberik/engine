@@ -1,0 +1,51 @@
+---
+apiVersion: core.kuberik.io/v1alpha1
+kind: Movie
+metadata:
+  name: hello-world
+spec:
+  template:
+    spec:
+      screenplays:
+      - name: main
+        scenes:
+        - name: hello-world
+          frames:
+          - name: hello-loop1
+            action:
+              template:
+                spec:
+                  containers:
+                  - name: hello-world
+                    image: "alpine:latest"
+                    command: ["sh", "-c"]
+                    args: ["for i in $(seq 1 2 101); do echo hello first $i; sleep 1.2; done"]
+          - name: hello-loop2
+            action:
+              template:
+                spec:
+                  containers:
+                  - name: hello-world
+                    image: "alpine:latest"
+                    command: ["sh", "-c"]
+                    args: ["for i in $(seq 1 3 201); do echo hello second $i; sleep 0.9; done"]
+        - name: bye-world
+          frames:
+          - name: hello-loop1
+            action:
+              template:
+                spec:
+                  containers:
+                  - name: hello-world
+                    image: "alpine:latest"
+                    command: ["sh", "-c"]
+                    args: ["for i in $(seq 1 2 101); do echo bye first $i; sleep 1.2; done"]
+          - name: hello-loop2
+            action:
+              template:
+                spec:
+                  containers:
+                  - name: hello-world
+                    image: "alpine:latest"
+                    command: ["sh", "-c"]
+                    args: ["for i in $(seq 1 3 201); do echo bye second $i; sleep 0.9; done"]

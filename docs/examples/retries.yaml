@@ -1,0 +1,24 @@
+---
+apiVersion: core.kuberik.io/v1alpha1
+kind: Movie
+metadata:
+  name: retries
+spec:
+  template:
+    spec:
+      screenplays:
+      - name: main
+        scenes:
+        - name: retry
+          frames:
+          - name: retry
+            action:
+              backOffLimit: 5
+              template:
+                spec:
+                  containers:
+                  - image: "alpine:latest"
+                    command: ["sh", "-c"]
+                    args:
+                    - >-
+                      if [ $((1 + RANDOM % 3)) -eq 1 ]; then /bin/false; fi

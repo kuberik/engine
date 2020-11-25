@@ -1,0 +1,102 @@
+---
+apiVersion: core.kuberik.io/v1alpha1
+kind: Screener
+metadata:
+  name: engine-ci
+spec:
+  movie: engine-ci
+  class: github.screener.kuberik.io
+  type: Push
+  config:
+    repo:
+      name: engine
+      owner: kuberik
+---
+apiVersion: core.kuberik.io/v1alpha1
+kind: Movie
+metadata:
+  name: engine-ci
+spec:
+  template:
+    spec:
+      provision:
+      - apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: &src-pvc src
+        spec:
+          accessModes: [ "ReadWriteMany" ]
+          resources:
+            requests:
+              storage: 2Gi
+          storageClass: nfs
+      templates:
+        pod:
+          volumes:
+          - name: &src-volume src
+            persistentVolumeClaim:
+              claimName: *src-pvc
+          - name: &scripts-volume
+            configMap: {name: engine-ci-scripts, defaultMode: 0744}
+        container:
+          volumeMounts:
+          - name: *src-volume
+            mountPath: &src-dir "/src"
+          - name: *scripts-volume
+            mountPath: /scripts
+          workingDir: *src-dir
+      screenplays:
+      - name: main
+        credits:
+          opening:
+          - name: status-pending
+            frames:
+              - name: status-pending
+                action: &github-status-update-action
+                  template:
+                    spec:
+                      containers:
+                      - name: status-update
+                        image: cloudposse/github-status-updater
+                        envFrom:
+                        - secretRef: {name: github-status-update}
+                        command: [/scripts/github-status-update.sh]
+          closing:
+          - name: status-finish
+            frames:
+              - name: status-finish
+                action: *github-status-update-action
+        scenes:
+        - name: clone
+          frames:
+          - name: clone
+            action:
+              template:
+                spec:
+                  containers:
+                  - name: clone
+                    image: &golang-image golang:1.14
+                    command: [/scripts/git-clone.sh]
+        - name: build
+          frames:
+          - name: build
+            action:
+              template:
+                spec:
+                  containers:
+                  - name: build
+                    image: *golang-image
+                    command: [make, build-operator]
+        - name: test
+          frames:
+          - name: test
+            action:
+              template:
+                spec:
+                  serviceAccount: kuberik-ci
+                  containers:
+                  - name: test
+                    image: *golang-image
+                    command: [/scripts/kuberik-ci-test.sh]
+                    - name: test-scripts
+                      mountPath: /scripts

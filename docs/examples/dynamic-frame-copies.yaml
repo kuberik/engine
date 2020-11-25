@@ -1,0 +1,22 @@
+---
+apiVersion: core.kuberik.io/v1alpha1
+kind: Movie
+metadata:
+  name: copies
+spec:
+  template:
+    spec:
+      screenplays:
+      - name: main
+        scenes:
+        - name: hello
+          frames:
+          - name: hello
+            copies: 3
+            action:
+              template:
+                spec:
+                  containers:
+                  - image: "alpine:latest"
+                    command: ["echo"]
+                    args: ["I'm number $(FRAME_COPY_INDEX)!"]

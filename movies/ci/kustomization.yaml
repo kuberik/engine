@@ -1,0 +1,16 @@
+---
+resources:
+- ci-movie.yaml
+
+configMapGenerator:
+- name: engine-ci-scripts
+  files:
+  - github-status-update.sh
+  - git-clone.sh
+  - generate-kubeconfig.sh
+  - kuberik-ci-test.sh
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+namespace: kuberik

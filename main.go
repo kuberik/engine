@@ -58,6 +58,7 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
+		Host:               host(),
 		Port:               9443,
 		LeaderElection:     enableLeaderElection,
 		LeaderElectionID:   "a13ffb06.kuberik.io",
@@ -98,4 +99,13 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func host() string {
+	if _, ok := os.LookupEnv("KUBERNETES_SERVICE_HOST"); ok {
+		// Running in the cluster - listen on all interfaces
+		return "0.0.0.0"
+	}
+	// Running on development machine - use localhost to avoid MacOS firewall prompts
+	return "127.0.0.1"
 }
