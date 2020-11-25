@@ -22,8 +22,3 @@ bin
 *.swp
 *.swo
 *~
-
-# Project custom
-
-# docs
-**/node_modules
