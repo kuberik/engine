@@ -1,0 +1,20 @@
+domain: kuberik.io
+layout: go.kubebuilder.io/v2
+projectName: engine
+repo: github.com/kuberik/engine
+resources:
+- group: core
+  kind: Screener
+  version: v1alpha1
+- group: core
+  kind: Movie
+  version: v1alpha1
+- group: core
+  kind: Event
+  version: v1alpha1
+- group: core
+  kind: Play
+  version: v1alpha1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}

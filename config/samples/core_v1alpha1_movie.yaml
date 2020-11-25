@@ -1,0 +1,7 @@
+apiVersion: core.kuberik.io/v1alpha1
+kind: Movie
+metadata:
+  name: movie-sample
+spec:
+  # Add fields here
+  foo: bar

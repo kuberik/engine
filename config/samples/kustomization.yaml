@@ -1,0 +1,7 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- core_v1alpha1_screener.yaml
+- core_v1alpha1_movie.yaml
+- core_v1alpha1_event.yaml
+- core_v1alpha1_play.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

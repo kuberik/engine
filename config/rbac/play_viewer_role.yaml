@@ -1,0 +1,20 @@
+# permissions for end users to view plays.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: play-viewer-role
+rules:
+- apiGroups:
+  - core.kuberik.io
+  resources:
+  - plays
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.kuberik.io
+  resources:
+  - plays/status
+  verbs:
+  - get

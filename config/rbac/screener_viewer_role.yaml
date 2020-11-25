@@ -1,0 +1,20 @@
+# permissions for end users to view screeners.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: screener-viewer-role
+rules:
+- apiGroups:
+  - core.kuberik.io
+  resources:
+  - screeners
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.kuberik.io
+  resources:
+  - screeners/status
+  verbs:
+  - get

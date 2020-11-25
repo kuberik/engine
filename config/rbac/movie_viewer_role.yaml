@@ -1,0 +1,20 @@
+# permissions for end users to view movies.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: movie-viewer-role
+rules:
+- apiGroups:
+  - core.kuberik.io
+  resources:
+  - movies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.kuberik.io
+  resources:
+  - movies/status
+  verbs:
+  - get
