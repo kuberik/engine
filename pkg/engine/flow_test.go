@@ -3,7 +3,7 @@ package engine
 import (
 	"testing"
 
-	corev1alpha1 "github.com/kuberik/engine/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
 	"github.com/kuberik/engine/pkg/engine/scheduler"
 	corev1 "k8s.io/api/core/v1"
 )

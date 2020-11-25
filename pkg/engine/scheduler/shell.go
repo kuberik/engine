@@ -3,7 +3,7 @@ package scheduler
 import (
 	"os/exec"
 
-	corev1alpha1 "github.com/kuberik/engine/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
 )
 
 // ShellScheduler runs workloads directly on the local system

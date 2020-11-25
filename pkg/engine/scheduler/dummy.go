@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	corev1alpha1 "github.com/kuberik/engine/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
 )
 
 // DummyScheduler implements Scheduler interface but doesn't run any workload
