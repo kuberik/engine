@@ -33,10 +33,8 @@ import (
 	"github.com/kuberik/engine/pkg/engine"
 	"github.com/kuberik/engine/pkg/engine/scheduler"
 	"github.com/kuberik/engine/pkg/randutils"
-)
 
-var (
-	flow = engine.NewFlow(scheduler.NewKubernetesScheduler(mgr.GetClient()))
+	batchv1 "k8s.io/api/batch/v1"
 )
 
 // PlayReconciler reconciles a Play object
@@ -52,11 +50,11 @@ type PlayReconciler struct {
 // +kubebuilder:rbac:groups=core.kuberik.io,resources=plays/status,verbs=get;update;patch
 
 func (r *PlayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	reqLogger = r.Log.WithValues("play", req.NamespacedName)
+	reqLogger := r.Log.WithValues("play", req.NamespacedName)
 
 	instance := &corev1alpha1.Play{}
 	ctx := context.TODO()
-	err := r.client.Get(ctx, request.NamespacedName, instance)
+	err := r.Client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -79,7 +77,7 @@ func (r *PlayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 func (r *PlayReconciler) reconcileCreated(instance *corev1alpha1.Play) (reconcile.Result, error) {
 	instance.Status.Phase = corev1alpha1.PlayPhaseInit
-	err := r.client.Status().Update(context.TODO(), instance)
+	err := r.Client.Status().Update(context.TODO(), instance)
 	return reconcile.Result{}, err
 }
 
@@ -95,21 +93,21 @@ func (r *PlayReconciler) reconcileInit(instance *corev1alpha1.Play) (reconcile.R
 
 	if err != nil {
 		instance.Status.Phase = corev1alpha1.PlayPhaseError
-		if errUpdate := r.client.Status().Update(context.TODO(), instance); errUpdate != nil {
+		if errUpdate := r.Client.Status().Update(context.TODO(), instance); errUpdate != nil {
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, err
 	}
 
 	r.populateRandomIDs(instance)
-	err = r.client.Update(context.TODO(), instance)
+	err = r.Client.Update(context.TODO(), instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	log.Info(fmt.Sprintf("Running play %s", instance.Name))
 	instance.Status.Phase = corev1alpha1.PlayPhaseRunning
-	err = r.client.Status().Update(context.TODO(), instance)
+	err = r.Client.Status().Update(context.TODO(), instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -122,21 +120,21 @@ func (r *PlayReconciler) reconcileRunning(instance *corev1alpha1.Play) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	err := flow.PlayNext(instance)
+	err := r.Flow.PlayNext(instance)
 	if engine.IsPlayEndedErorr(err) {
 		if instance.Status.Failed() {
 			instance.Status.Phase = corev1alpha1.PlayPhaseFailed
 		} else {
 			instance.Status.Phase = corev1alpha1.PlayPhaseComplete
 		}
-		return reconcile.Result{}, r.client.Status().Update(context.TODO(), instance)
+		return reconcile.Result{}, r.Client.Status().Update(context.TODO(), instance)
 	}
 	return reconcile.Result{}, err
 }
 
 func (r *PlayReconciler) reconcileComplete(instance *corev1alpha1.Play) (reconcile.Result, error) {
 	for _, pvcName := range instance.Status.ProvisionedVolumes {
-		r.client.Delete(context.TODO(), &corev1.PersistentVolumeClaim{
+		r.Client.Delete(context.TODO(), &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      pvcName,
 				Namespace: instance.Namespace,
@@ -144,7 +142,7 @@ func (r *PlayReconciler) reconcileComplete(instance *corev1alpha1.Play) (reconci
 		})
 	}
 	instance.Status.ProvisionedVolumes = make(map[string]string)
-	err := r.client.Status().Update(context.TODO(), instance)
+	err := r.Client.Status().Update(context.TODO(), instance)
 	log.Info(fmt.Sprintf("Play %s competed with status: %s", instance.Name, instance.Status.Phase))
 	return reconcile.Result{}, err
 }
@@ -171,7 +169,7 @@ func (r *PlayReconciler) provisionVarsConfigMap(instance *corev1alpha1.Play) err
 		Data: configMapValues,
 	}
 
-	err := r.client.Create(context.TODO(), varsConfigMap)
+	err := r.Client.Create(context.TODO(), varsConfigMap)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	}
@@ -181,7 +179,7 @@ func (r *PlayReconciler) provisionVarsConfigMap(instance *corev1alpha1.Play) err
 
 func (r *PlayReconciler) updateStatus(play *corev1alpha1.Play) error {
 	jobs := &batchv1.JobList{}
-	r.client.List(context.TODO(), jobs, &client.ListOptions{
+	r.Client.List(context.TODO(), jobs, &client.ListOptions{
 		LabelSelector: func() labels.Selector {
 			ls, _ := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -209,7 +207,7 @@ func (r *PlayReconciler) updateStatus(play *corev1alpha1.Play) error {
 		return nil
 	}
 
-	return r.client.Status().Update(context.TODO(), play)
+	return r.Client.Status().Update(context.TODO(), play)
 }
 
 // ProvisionVolumes provisions volumes for the duration of the play
@@ -221,7 +219,7 @@ func (r *PlayReconciler) provisionVolumes(play *corev1alpha1.Play) (err error) {
 	for _, volumeClaimTemplate := range play.Spec.VolumeClaimTemplates {
 		pvcName := fmt.Sprintf("%s-%s", play.Name, volumeClaimTemplate.Name)
 
-		err = r.client.Create(context.TODO(), &corev1.PersistentVolumeClaim{
+		err = r.Client.Create(context.TODO(), &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      pvcName,
 				Namespace: play.Namespace,

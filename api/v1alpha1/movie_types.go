@@ -79,7 +79,7 @@ func (m *Movie) GeneratePlay() Play {
 func (m *Movie) GenerateEventPlay(event Event) Play {
 	play := m.generatePlay()
 	play.Name = fmt.Sprintf("%s-%s", m.Name, event.Name)
-	return play, nil
+	return play
 }
 
 // +kubebuilder:object:root=true

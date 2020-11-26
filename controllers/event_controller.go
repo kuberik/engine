@@ -78,7 +78,7 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{Requeue: true}, err
 	}
 
-	r.client.Create(context.TODO(), p)
+	r.Client.Create(context.TODO(), p)
 	if err != nil {
 		return reconcile.Result{Requeue: true}, err
 	}
