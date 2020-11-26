@@ -66,6 +66,12 @@ func (m *Movie) generatePlay() Play {
 	return Play{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: m.Namespace,
+			OwnerReferences: []metav1.OwnerReference{{
+				APIVersion: m.APIVersion,
+				Kind:       m.Kind,
+				Name:       m.Name,
+				UID:        m.UID,
+			}},
 		},
 		Spec: m.Spec.Template.Spec,
 	}
@@ -78,6 +84,12 @@ func (m *Movie) GeneratePlay() Play {
 
 func (m *Movie) GenerateEventPlay(event Event) Play {
 	play := m.generatePlay()
+	play.OwnerReferences = append(play.OwnerReferences, metav1.OwnerReference{
+		APIVersion: event.APIVersion,
+		Kind:       event.Kind,
+		Name:       event.Name,
+		UID:        event.UID,
+	})
 	play.Name = fmt.Sprintf("%s-%s", m.Name, event.Name)
 	return play
 }
