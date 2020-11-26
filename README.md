@@ -36,7 +36,7 @@ Project is in alpha stage. API is still a subject to change. Please do not use i
 Start up the operator:
 
 ```shell
-operator-sdk run --local --namespace=<your-namespace>
+make run
 ```
 
 You can use one of the pipelines from the `docs/examples` directory to execute some workload on kuberik.
