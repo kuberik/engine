@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -28,8 +29,11 @@ type ScreenerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Screener. Edit Screener_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Class string `json:"class"`
+	Type  string `json:"type"`
+	// Movie is referencing a Movie for which this Screener creates Events
+	Movie  string               `json:"movie"`
+	Config runtime.RawExtension `json:"config"`
 }
 
 // ScreenerStatus defines the observed state of Screener
