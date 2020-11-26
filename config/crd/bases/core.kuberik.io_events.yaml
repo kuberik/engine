@@ -36,9 +36,13 @@ spec:
         spec:
           description: EventSpec defines the desired state of Event
           properties:
-            foo:
-              description: Foo is an example field of Event. Edit Event_types.go to
-                remove/update
+            data:
+              additionalProperties:
+                type: string
+              description: Data contains event information
+              type: object
+            movie:
+              description: Movie is referencing a Movie for which this Event is created
               type: string
           type: object
         status:

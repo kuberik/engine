@@ -36,10 +36,21 @@ spec:
         spec:
           description: ScreenerSpec defines the desired state of Screener
           properties:
-            foo:
-              description: Foo is an example field of Screener. Edit Screener_types.go
-                to remove/update
+            class:
               type: string
+            config:
+              type: object
+            movie:
+              description: Movie is referencing a Movie for which this Screener creates
+                Events
+              type: string
+            type:
+              type: string
+          required:
+          - class
+          - config
+          - movie
+          - type
           type: object
         status:
           description: ScreenerStatus defines the observed state of Screener
