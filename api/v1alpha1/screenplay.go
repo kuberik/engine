@@ -106,22 +106,26 @@ type Frame struct {
 	Story  *string `json:"story,omitempty"`
 }
 
-// FrameResult represents end result of a frame
-type FrameResult int
+// FrameStatus represents end result of a frame
+type FrameStatus int
 
 const (
-	// FrameResultSuccessful indicates that frame ended sucessfully
-	FrameResultSuccessful FrameResult = iota
-	// FrameResultFailed indicates that frame finished with an error
-	FrameResultFailed
+	// FrameStatusSuccessful indicates that frame ended sucessfully
+	FrameStatusSuccessful FrameStatus = iota
+	// FrameStatusFailed indicates that frame finished with an error
+	FrameStatusFailed
+	// FrameStatusRunning indicates that frame is running
+	FrameStatusRunning
 )
 
-func (fr FrameResult) String() string {
+func (fr FrameStatus) String() string {
 	switch fr {
-	case FrameResultSuccessful:
+	case FrameStatusSuccessful:
 		return "success"
-	case FrameResultFailed:
+	case FrameStatusFailed:
 		return "failed"
+	case FrameStatusRunning:
+		return "running"
 	}
 	panic("Frame result not defined")
 }

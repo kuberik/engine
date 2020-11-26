@@ -393,7 +393,7 @@ func (in *PlayStatus) DeepCopyInto(out *PlayStatus) {
 	*out = *in
 	if in.Frames != nil {
 		in, out := &in.Frames, &out.Frames
-		*out = make(map[string]FrameResult, len(*in))
+		*out = make(map[string]FrameStatus, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}

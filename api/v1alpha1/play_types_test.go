@@ -57,16 +57,16 @@ func TestPlayStatusFailed(t *testing.T) {
 	var status PlayStatus
 
 	status = PlayStatus{
-		Frames: map[string]FrameResult{},
+		Frames: map[string]FrameStatus{},
 	}
 	if status.Failed() {
 		t.Errorf("Status is failed but it's shouldn't be")
 	}
 
 	status = PlayStatus{
-		Frames: map[string]FrameResult{
-			"a": FrameResultSuccessful,
-			"b": FrameResultSuccessful,
+		Frames: map[string]FrameStatus{
+			"a": FrameStatusSuccessful,
+			"b": FrameStatusSuccessful,
 		},
 	}
 	if status.Failed() {
@@ -74,10 +74,10 @@ func TestPlayStatusFailed(t *testing.T) {
 	}
 
 	status = PlayStatus{
-		Frames: map[string]FrameResult{
-			"a": FrameResultSuccessful,
-			"b": FrameResultSuccessful,
-			"c": FrameResultFailed,
+		Frames: map[string]FrameStatus{
+			"a": FrameStatusSuccessful,
+			"b": FrameStatusSuccessful,
+			"c": FrameStatusFailed,
 		},
 	}
 	if !status.Failed() {

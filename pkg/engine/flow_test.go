@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	failed  = corev1alpha1.FrameResultFailed
-	success = corev1alpha1.FrameResultSuccessful
+	failed  = corev1alpha1.FrameStatusFailed
+	success = corev1alpha1.FrameStatusSuccessful
 )
 
 func helloWorldAction() *corev1alpha1.Exec {
@@ -27,7 +27,7 @@ func helloWorldAction() *corev1alpha1.Exec {
 	}
 }
 
-func assertFrameState(t *testing.T, play *corev1alpha1.Play, states map[string]*corev1alpha1.FrameResult) {
+func assertFrameState(t *testing.T, play *corev1alpha1.Play, states map[string]*corev1alpha1.FrameStatus) {
 	for k, v := range states {
 		if v == nil {
 			if _, ok := play.Status.Frames[k]; ok {
@@ -128,7 +128,7 @@ func TestPlayNextLoop(t *testing.T) {
 	flow.PlayNext(play)
 	// Mark "a" as not played
 	delete(play.Status.Frames, "a")
-	assertFrameState(t, play, map[string]*corev1alpha1.FrameResult{
+	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": nil,
 		"b": &success,
 		"c": nil,
@@ -136,7 +136,7 @@ func TestPlayNextLoop(t *testing.T) {
 	})
 
 	flow.PlayNext(play)
-	assertFrameState(t, play, map[string]*corev1alpha1.FrameResult{
+	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": &success,
 		"c": nil,
@@ -144,7 +144,7 @@ func TestPlayNextLoop(t *testing.T) {
 	})
 
 	flow.PlayNext(play)
-	assertFrameState(t, play, map[string]*corev1alpha1.FrameResult{
+	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": &success,
 		"c": &success,
@@ -197,7 +197,7 @@ func TestPlayNextWithCredits(t *testing.T) {
 
 	flow := NewFlow(&scheduler.DummyScheduler{})
 	flow.PlayNext(play)
-	assertFrameState(t, play, map[string]*corev1alpha1.FrameResult{
+	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": nil,
 		"c": nil,
@@ -205,7 +205,7 @@ func TestPlayNextWithCredits(t *testing.T) {
 	})
 
 	flow.PlayNext(play)
-	assertFrameState(t, play, map[string]*corev1alpha1.FrameResult{
+	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": &success,
 		"c": nil,
@@ -213,7 +213,7 @@ func TestPlayNextWithCredits(t *testing.T) {
 	})
 
 	flow.PlayNext(play)
-	assertFrameState(t, play, map[string]*corev1alpha1.FrameResult{
+	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": &success,
 		"c": &success,
@@ -221,7 +221,7 @@ func TestPlayNextWithCredits(t *testing.T) {
 	})
 
 	flow.PlayNext(play)
-	assertFrameState(t, play, map[string]*corev1alpha1.FrameResult{
+	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": &success,
 		"c": &success,
@@ -274,7 +274,7 @@ func TestPlayNextFailedPlay(t *testing.T) {
 	flow.PlayNext(play)
 	// Mark "a" as not played
 	delete(play.Status.Frames, "a")
-	assertFrameState(t, play, map[string]*corev1alpha1.FrameResult{
+	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": nil,
 		"b": &success,
 		"c": nil,
@@ -283,7 +283,7 @@ func TestPlayNextFailedPlay(t *testing.T) {
 
 	flow = NewFlow(&scheduler.DummyScheduler{Result: 1})
 	flow.PlayNext(play)
-	assertFrameState(t, play, map[string]*corev1alpha1.FrameResult{
+	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &failed,
 		"b": &success,
 		"c": nil,
@@ -294,7 +294,7 @@ func TestPlayNextFailedPlay(t *testing.T) {
 	if !IsPlayEndedErorr(err) {
 		t.Errorf("Play should have ended")
 	}
-	assertFrameState(t, play, map[string]*corev1alpha1.FrameResult{
+	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &failed,
 		"b": &success,
 		"c": nil,
@@ -325,11 +325,11 @@ func TestAddScreenplayResult(t *testing.T) {
 	}
 
 	var closingFrames []corev1alpha1.Frame
-	play.Status = corev1alpha1.PlayStatus{Frames: map[string]corev1alpha1.FrameResult{
-		"a": corev1alpha1.FrameResultSuccessful,
-		"b": corev1alpha1.FrameResultFailed,
-		"d": corev1alpha1.FrameResultFailed,
-		"e": corev1alpha1.FrameResultFailed,
+	play.Status = corev1alpha1.PlayStatus{Frames: map[string]corev1alpha1.FrameStatus{
+		"a": corev1alpha1.FrameStatusSuccessful,
+		"b": corev1alpha1.FrameStatusFailed,
+		"d": corev1alpha1.FrameStatusFailed,
+		"e": corev1alpha1.FrameStatusFailed,
 	}}
 	closingFrames = []corev1alpha1.Frame{{
 		Action: helloWorldAction(),
@@ -339,12 +339,12 @@ func TestAddScreenplayResult(t *testing.T) {
 		t.Errorf("Expected to find %s env with status %s", kuberikScreenplayResultEnv, kuberikScreenplayResultValueFail)
 	}
 
-	play.Status = corev1alpha1.PlayStatus{Frames: map[string]corev1alpha1.FrameResult{
-		"a": corev1alpha1.FrameResultSuccessful,
-		"b": corev1alpha1.FrameResultSuccessful,
-		"c": corev1alpha1.FrameResultSuccessful,
-		"d": corev1alpha1.FrameResultFailed,
-		"e": corev1alpha1.FrameResultFailed,
+	play.Status = corev1alpha1.PlayStatus{Frames: map[string]corev1alpha1.FrameStatus{
+		"a": corev1alpha1.FrameStatusSuccessful,
+		"b": corev1alpha1.FrameStatusSuccessful,
+		"c": corev1alpha1.FrameStatusSuccessful,
+		"d": corev1alpha1.FrameStatusFailed,
+		"e": corev1alpha1.FrameStatusFailed,
 	}}
 	closingFrames = []corev1alpha1.Frame{{
 		Action: helloWorldAction(),

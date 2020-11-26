@@ -39,16 +39,16 @@ type PlayStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Frames             map[string]FrameResult `json:"frames,omitempty"`
+	Frames             map[string]FrameStatus `json:"frames,omitempty"`
 	Phase              PlayPhaseType          `json:"phase,omitempty"`
 	ProvisionedVolumes map[string]string      `json:"provisionedVolumes,omitempty"`
 	VarsConfigMap      string                 `json:"varsConfigMap,omitempty"`
 }
 
 // SetFrameStatus sets result of a frame
-func (ps *PlayStatus) SetFrameStatus(frameID string, result FrameResult) {
+func (ps *PlayStatus) SetFrameStatus(frameID string, result FrameStatus) {
 	if ps.Frames == nil {
-		ps.Frames = make(map[string]FrameResult)
+		ps.Frames = make(map[string]FrameStatus)
 	}
 	ps.Frames[frameID] = result
 }
@@ -59,7 +59,7 @@ func (ps *PlayStatus) Failed() bool {
 		return false
 	}
 	for _, r := range ps.Frames {
-		if r == FrameResultFailed {
+		if r == FrameStatusFailed {
 			return true
 		}
 	}

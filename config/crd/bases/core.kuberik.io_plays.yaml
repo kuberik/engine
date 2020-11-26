@@ -24012,7 +24012,7 @@ spec:
           properties:
             frames:
               additionalProperties:
-                description: FrameResult represents end result of a frame
+                description: FrameStatus represents end result of a frame
                 type: integer
               type: object
             phase:

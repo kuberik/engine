@@ -245,7 +245,7 @@ func addScreenplayResult(frames []corev1alpha1.Frame, play *corev1alpha1.Play, s
 	var result string
 	for _, s := range play.Screenplay(screenplayName).Scenes {
 		for _, f := range s.Frames {
-			if play.Status.Frames[f.ID] == corev1alpha1.FrameResultFailed {
+			if play.Status.Frames[f.ID] == corev1alpha1.FrameStatusFailed {
 				result = kuberikScreenplayResultValueFail
 			}
 		}

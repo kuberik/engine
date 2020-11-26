@@ -7,7 +7,7 @@ import (
 // DummyScheduler implements Scheduler interface but doesn't run any workload
 type DummyScheduler struct {
 	// Result is a value that dummy scheduler sets as a result status of any frame played
-	Result corev1alpha1.FrameResult
+	Result corev1alpha1.FrameStatus
 }
 
 var _ Scheduler = &DummyScheduler{}

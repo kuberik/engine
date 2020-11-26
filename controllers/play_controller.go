@@ -200,8 +200,8 @@ func (r *PlayReconciler) updateStatus(play *corev1alpha1.Play) error {
 		}
 
 		updated = true
-		if finished, exit := jobResult(&j); finished {
-			play.Status.SetFrameStatus(frameID, exit)
+		if status := frameStatus(&j); status != corev1alpha1.FrameStatusRunning {
+			play.Status.SetFrameStatus(frameID, status)
 		}
 	}
 
@@ -240,19 +240,18 @@ func (r *PlayReconciler) provisionVolumes(play *corev1alpha1.Play) (err error) {
 	return
 }
 
-func jobResult(job *batchv1.Job) (finished bool, exit corev1alpha1.FrameResult) {
+func frameStatus(job *batchv1.Job) corev1alpha1.FrameStatus {
 	// Successfully completed a single instance of a job
 	for _, condition := range job.Status.Conditions {
 		if condition.Type == batchv1.JobFailed || condition.Type == batchv1.JobComplete {
-			finished = true
 			if condition.Type == batchv1.JobComplete {
-				exit = corev1alpha1.FrameResultSuccessful
+				return corev1alpha1.FrameStatusSuccessful
 			} else {
-				exit = corev1alpha1.FrameResultFailed
+				return corev1alpha1.FrameStatusFailed
 			}
 		}
 	}
-	return
+	return corev1alpha1.FrameStatusRunning
 }
 
 func (r *PlayReconciler) SetupWithManager(mgr ctrl.Manager) error {
