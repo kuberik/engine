@@ -256,5 +256,6 @@ func jobResult(job *batchv1.Job) (finished bool, exit corev1alpha1.FrameResult) 
 func (r *PlayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1alpha1.Play{}).
+		Owns(&batchv1.Job{}).
 		Complete(r)
 }
