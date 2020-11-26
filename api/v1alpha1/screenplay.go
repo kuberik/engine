@@ -129,6 +129,8 @@ func (fr FrameResult) String() string {
 	panic("Frame result not defined")
 }
 
+// +kubebuilder:object:generate=false
+
 // Exec Represents a running container
 type Exec = batchv1.JobSpec
 
