@@ -16,14 +16,12 @@
 | frames       | \[][Frame]  |                                        List of frames |
 | pass         | [Condition] |                                        Pass condition |
 | when         | [Condition] |                                     Trigger condition |
-| ignoreErrors |    bool     | If `true` pipelines will continue regardless of error |
 
 ## Frame
 | Field        |   Type    |                                           Description |
 |--------------|:---------:|------------------------------------------------------:|
 | name         |  string   |                                     Name of the frame |
 | action       | [JobSpec] |                                    Job to be executed |
-| ignoreErrors |   bool    | If `true` pipelines will continue regardless of error |
 | loop         |    int    |       Number of instances of the task to be scheduled |
 
 ## Variable

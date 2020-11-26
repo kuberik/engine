@@ -65,10 +65,9 @@ func (s *Screenplay) Scene(name string) (*Scene, error) {
 
 // Scene describes a collection of frames that need to be executed in parallel
 type Scene struct {
-	Name         string    `json:"name"`
-	Frames       []Frame   `json:"frames"`
-	Pass         Condition `json:"pass,omitempty"`
-	IgnoreErrors bool      `json:"ignore_errors,omitempty" yaml:"ignore_errors"`
+	Name   string    `json:"name"`
+	Frames []Frame   `json:"frames"`
+	Pass   Condition `json:"pass,omitempty"`
 }
 
 // Condition describes a logical filter which controls execution of the pipeline
@@ -100,13 +99,11 @@ func (c Condition) Evaluate(vars Vars) bool {
 
 // Frame describes either an action or story that needs to be executed
 type Frame struct {
-	ID            string    `json:"id,omitempty"`
-	Name          string    `json:"name,omitempty"`
-	IgnoreErrors  bool      `json:"ignoreErrors,omitempty"`
-	Copies        int       `json:"copies,omitempty"`
-	SkipCondition Condition `json:"skipCondition,omitempty"`
-	Action        *Exec     `json:"action,omitempty"`
-	Story         *string   `json:"story,omitempty"`
+	ID     string  `json:"id,omitempty"`
+	Name   string  `json:"name,omitempty"`
+	Copies int     `json:"copies,omitempty"`
+	Action *Exec   `json:"action,omitempty"`
+	Story  *string `json:"story,omitempty"`
 }
 
 // FrameResult represents end result of a frame
