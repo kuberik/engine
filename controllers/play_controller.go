@@ -44,6 +44,8 @@ type PlayReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+
+	Flow engine.Flow
 }
 
 // +kubebuilder:rbac:groups=core.kuberik.io,resources=plays,verbs=get;list;watch;create;update;patch;delete
@@ -75,13 +77,13 @@ func (r *PlayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcilePlay) reconcileCreated(instance *corev1alpha1.Play) (reconcile.Result, error) {
+func (r *PlayReconciler) reconcileCreated(instance *corev1alpha1.Play) (reconcile.Result, error) {
 	instance.Status.Phase = corev1alpha1.PlayPhaseInit
 	err := r.client.Status().Update(context.TODO(), instance)
 	return reconcile.Result{}, err
 }
 
-func (r *ReconcilePlay) reconcileInit(instance *corev1alpha1.Play) (reconcile.Result, error) {
+func (r *PlayReconciler) reconcileInit(instance *corev1alpha1.Play) (reconcile.Result, error) {
 	err := func() error {
 		err := r.provisionVarsConfigMap(instance)
 		if err != nil {
@@ -115,7 +117,7 @@ func (r *ReconcilePlay) reconcileInit(instance *corev1alpha1.Play) (reconcile.Re
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcilePlay) reconcileRunning(instance *corev1alpha1.Play) (reconcile.Result, error) {
+func (r *PlayReconciler) reconcileRunning(instance *corev1alpha1.Play) (reconcile.Result, error) {
 	if err := r.updateStatus(instance); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -132,7 +134,7 @@ func (r *ReconcilePlay) reconcileRunning(instance *corev1alpha1.Play) (reconcile
 	return reconcile.Result{}, err
 }
 
-func (r *ReconcilePlay) reconcileComplete(instance *corev1alpha1.Play) (reconcile.Result, error) {
+func (r *PlayReconciler) reconcileComplete(instance *corev1alpha1.Play) (reconcile.Result, error) {
 	for _, pvcName := range instance.Status.ProvisionedVolumes {
 		r.client.Delete(context.TODO(), &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
@@ -147,7 +149,7 @@ func (r *ReconcilePlay) reconcileComplete(instance *corev1alpha1.Play) (reconcil
 	return reconcile.Result{}, err
 }
 
-func (r *ReconcilePlay) populateRandomIDs(play *corev1alpha1.Play) {
+func (r *PlayReconciler) populateRandomIDs(play *corev1alpha1.Play) {
 	frames := play.AllFrames()
 	randomIDs := randutils.RandList(len(frames))
 	for i, f := range frames {
@@ -155,7 +157,7 @@ func (r *ReconcilePlay) populateRandomIDs(play *corev1alpha1.Play) {
 	}
 }
 
-func (r *ReconcilePlay) provisionVarsConfigMap(instance *corev1alpha1.Play) error {
+func (r *PlayReconciler) provisionVarsConfigMap(instance *corev1alpha1.Play) error {
 	varsConfigMapName := fmt.Sprintf("%s-vars", instance.Name)
 	configMapValues := make(map[string]string)
 	for _, v := range instance.Spec.Vars {
@@ -177,7 +179,7 @@ func (r *ReconcilePlay) provisionVarsConfigMap(instance *corev1alpha1.Play) erro
 	return nil
 }
 
-func (r *ReconcilePlay) updateStatus(play *corev1alpha1.Play) error {
+func (r *PlayReconciler) updateStatus(play *corev1alpha1.Play) error {
 	jobs := &batchv1.JobList{}
 	r.client.List(context.TODO(), jobs, &client.ListOptions{
 		LabelSelector: func() labels.Selector {
@@ -211,7 +213,7 @@ func (r *ReconcilePlay) updateStatus(play *corev1alpha1.Play) error {
 }
 
 // ProvisionVolumes provisions volumes for the duration of the play
-func (r *ReconcilePlay) provisionVolumes(play *corev1alpha1.Play) (err error) {
+func (r *PlayReconciler) provisionVolumes(play *corev1alpha1.Play) (err error) {
 	if play.Status.ProvisionedVolumes == nil {
 		play.Status.ProvisionedVolumes = make(map[string]string)
 	}

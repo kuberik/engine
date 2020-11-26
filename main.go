@@ -29,6 +29,8 @@ import (
 
 	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
 	"github.com/kuberik/engine/controllers"
+	"github.com/kuberik/engine/pkg/engine"
+	"github.com/kuberik/engine/pkg/engine/scheduler"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -88,6 +90,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Play"),
 		Scheme: mgr.GetScheme(),
+		Flow:   engine.NewFlow(scheduler.NewKubernetesScheduler(mgr.GetClient())),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Play")
 		os.Exit(1)

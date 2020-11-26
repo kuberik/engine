@@ -42,11 +42,11 @@ type EventReconciler struct {
 
 func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
-	reqLogger = r.Log.WithValues("event", req.NamespacedName)
+	reqLogger := r.Log.WithValues("event", req.NamespacedName)
 
 	// Fetch the Event instance
 	instance := &corev1alpha1.Event{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	err := r.Client.Get(context.TODO(), req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -59,8 +59,8 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	movie := &corev1alpha1.Movie{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{
-		Name:      instance.Spec.MovieName,
+	err = r.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      instance.Spec.Movie,
 		Namespace: instance.Namespace,
 	}, movie)
 	if err != nil {

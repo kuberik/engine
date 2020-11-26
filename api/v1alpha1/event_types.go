@@ -28,8 +28,11 @@ type EventSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Event. Edit Event_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Movie is referencing a Movie for which this Event is created
+	Movie string `json:"movie,omitempty"`
+
+	// Data contains event information
+	Data map[string]string `json:"data,omitempty"`
 }
 
 // EventStatus defines the observed state of Event
