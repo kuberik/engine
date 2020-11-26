@@ -71,7 +71,7 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// TODO: test the GeneratePlay method
 	// TODO: test using operator-sdk e2e testing
-	p, err := movie.GeneratePlay(instance.Vars()...)
+	p, err := movie.GeneratePlay(instance)
 	if err != nil {
 		// TODO update status to error
 		// TODO this should not happen if event validation hook is deployed
