@@ -35,6 +35,8 @@ import (
 	"github.com/kuberik/engine/pkg/randutils"
 
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PlayReconciler reconciles a Play object
@@ -50,11 +52,11 @@ type PlayReconciler struct {
 // +kubebuilder:rbac:groups=core.kuberik.io,resources=plays/status,verbs=get;update;patch
 
 func (r *PlayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	reqLogger := r.Log.WithValues("play", req.NamespacedName)
+	_ = r.Log.WithValues("play", req.NamespacedName)
 
 	instance := &corev1alpha1.Play{}
 	ctx := context.TODO()
-	err := r.Client.Get(ctx, request.NamespacedName, instance)
+	err := r.Client.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return reconcile.Result{}, nil

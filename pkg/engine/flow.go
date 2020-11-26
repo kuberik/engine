@@ -23,8 +23,8 @@ type Flow struct {
 }
 
 // NewFlow creates a new Flow that executes actions with given Scheduler
-func NewFlow(scheduler scheduler.Scheduler) *Flow {
-	return &Flow{
+func NewFlow(scheduler scheduler.Scheduler) Flow {
+	return Flow{
 		scheduler: scheduler,
 	}
 }

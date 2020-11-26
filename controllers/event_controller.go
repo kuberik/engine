@@ -42,7 +42,7 @@ type EventReconciler struct {
 
 func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
-	reqLogger := r.Log.WithValues("event", req.NamespacedName)
+	_ = r.Log.WithValues("event", req.NamespacedName)
 
 	// Fetch the Event instance
 	instance := &corev1alpha1.Event{}
@@ -71,14 +71,8 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// TODO: test the GeneratePlay method
 	// TODO: test using operator-sdk e2e testing
-	p, err := movie.GeneratePlay(instance)
-	if err != nil {
-		// TODO update status to error
-		// TODO this should not happen if event validation hook is deployed
-		return reconcile.Result{Requeue: true}, err
-	}
-
-	r.Client.Create(context.TODO(), p)
+	p := movie.GenerateEventPlay(*instance)
+	r.Client.Create(context.TODO(), &p)
 	if err != nil {
 		return reconcile.Result{Requeue: true}, err
 	}
