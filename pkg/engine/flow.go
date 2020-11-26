@@ -103,7 +103,7 @@ func expandCopies(playSpec *corev1alpha1.PlaySpec) {
 			for _, f := range playSpec.Screenplays[k].Scenes[si].Frames {
 				if f.Copies > 1 {
 					for i := 0; i < f.Copies; i++ {
-						fc := f.Copy()
+						fc := f.DeepCopy()
 
 						fc.ID = fmt.Sprintf("%s-%v", fc.ID, i)
 						fc.Name = fmt.Sprintf("%s-%v", fc.Name, i)
@@ -113,7 +113,7 @@ func expandCopies(playSpec *corev1alpha1.PlaySpec) {
 								Value: fmt.Sprintf("%v", i),
 							})
 						}
-						frames = append(frames, fc)
+						frames = append(frames, *fc)
 					}
 				} else {
 					frames = append(frames, f)

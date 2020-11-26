@@ -134,13 +134,3 @@ func (fr FrameStatus) String() string {
 
 // Exec Represents a running container
 type Exec = batchv1.JobSpec
-
-// Copy makes a copy of the frame
-func (f *Frame) Copy() Frame {
-	return Frame{
-		ID:     f.ID,
-		Name:   f.Name,
-		Action: f.Action.DeepCopy(),
-		Copies: f.Copies,
-	}
-}
