@@ -20,18 +20,18 @@ import (
 
 var (
 	playClient    client.Client
-	reconcilePlay *ReconcilePlay
+	reconcilePlay *PlayReconciler
 )
 
 func init() {
 	play := &corev1alpha1.Play{}
 	scheme := scheme.Scheme
-	scheme.AddKnownTypes(corev1alpha1.SchemeGroupVersion, play)
+	scheme.AddKnownTypes(corev1alpha1.GroupVersion, play)
 	playClient = fake.NewFakeClientWithScheme(scheme)
-	reconcilePlay = &ReconcilePlay{
-		client: playClient,
-		scheme: scheme,
-		flow:   engine.NewFlow(scheduler.NewKubernetesScheduler(playClient)),
+	reconcilePlay = &PlayReconciler{
+		Client: playClient,
+		Scheme: scheme,
+		Flow:   engine.NewFlow(scheduler.NewKubernetesScheduler(playClient)),
 	}
 }
 
