@@ -11,6 +11,16 @@ type ShellScheduler struct{}
 
 var _ Scheduler = &ShellScheduler{}
 
+// Provision is not implemented for ShellScheduler
+func (s *ShellScheduler) Provision(play *corev1alpha1.Play) error {
+	panic("not implemented")
+}
+
+// Deprovision is not implemented for ShellScheduler
+func (s *ShellScheduler) Deprovision(play *corev1alpha1.Play) error {
+	panic("not implemented")
+}
+
 // Run implements Scheduler interface
 func (s *ShellScheduler) Run(play *corev1alpha1.Play, frameID string) error {
 	e := play.Frame(frameID).Action

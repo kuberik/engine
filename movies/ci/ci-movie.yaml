@@ -19,34 +19,34 @@ metadata:
 spec:
   template:
     spec:
-      provision:
-      - apiVersion: v1
-        kind: PersistentVolumeClaim
-        metadata:
-          name: &src-pvc src
-        spec:
-          accessModes: [ "ReadWriteMany" ]
-          resources:
-            requests:
-              storage: 2Gi
-          storageClass: nfs
-      templates:
-        pod:
-          volumes:
-          - name: &src-volume src
-            persistentVolumeClaim:
-              claimName: *src-pvc
-          - name: &scripts-volume
-            configMap: {name: engine-ci-scripts, defaultMode: 0744}
-        container:
-          volumeMounts:
-          - name: *src-volume
-            mountPath: &src-dir "/src"
-          - name: *scripts-volume
-            mountPath: /scripts
-          workingDir: *src-dir
       screenplays:
       - name: main
+        provision:
+        - apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: &src-pvc src
+          spec:
+            accessModes: [ "ReadWriteMany" ]
+            resources:
+              requests:
+                storage: 2Gi
+            storageClass: nfs
+        templates:
+          pod:
+            volumes:
+            - name: &src-volume src
+              persistentVolumeClaim:
+                claimName: *src-pvc
+            - name: &scripts-volume
+              configMap: {name: engine-ci-scripts, defaultMode: 0744}
+          container:
+            volumeMounts:
+            - name: *src-volume
+              mountPath: &src-dir "/src"
+            - name: *scripts-volume
+              mountPath: /scripts
+            workingDir: *src-dir
         credits:
           opening:
           - name: status-pending

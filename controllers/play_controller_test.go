@@ -7,7 +7,7 @@ import (
 
 	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
 	"github.com/kuberik/engine/pkg/engine"
-	"github.com/kuberik/engine/pkg/engine/scheduler"
+	"github.com/kuberik/engine/pkg/engine/scheduler/k8s"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +31,7 @@ func init() {
 	reconcilePlay = &PlayReconciler{
 		Client: playClient,
 		Scheme: scheme,
-		Flow:   engine.NewFlow(scheduler.NewKubernetesScheduler(playClient)),
+		Flow:   engine.NewFlow(k8s.NewKubernetesScheduler(playClient)),
 	}
 }
 

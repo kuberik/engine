@@ -12,6 +12,16 @@ type DummyScheduler struct {
 
 var _ Scheduler = &DummyScheduler{}
 
+// Provision doesn't do anything for DummyScheduler
+func (s *DummyScheduler) Provision(play *corev1alpha1.Play) error {
+	return nil
+}
+
+// Deprovision doesn't do anything for DummyScheduler
+func (s *DummyScheduler) Deprovision(play *corev1alpha1.Play) error {
+	return nil
+}
+
 // Run implements Scheduler interface
 func (s *DummyScheduler) Run(play *corev1alpha1.Play, frameID string) error {
 	play.Status.SetFrameStatus(frameID, s.Result)

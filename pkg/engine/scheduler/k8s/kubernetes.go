@@ -1,42 +1,81 @@
-package scheduler
+package k8s
 
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
+	"github.com/kuberik/engine/pkg/engine/scheduler"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
 	batchv1 "k8s.io/api/batch/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/kustomize/api/provider"
+	"sigs.k8s.io/kustomize/api/resource"
 )
-
-const (
-	// JobLabelPlay is name of a label which stores name of the play that owns frame of this job
-	JobLabelPlay = "kuberik.io/play"
-
-	// JobAnnotationFrameID is name of a label which stores ID of the frame that owns the job
-	JobAnnotationFrameID = "kuberik.io/frameID"
-)
-
-var updateLock sync.Mutex
 
 // KubernetesScheduler defines a Scheduler which executes Plays on Kubernetes
 type KubernetesScheduler struct {
 	client client.Client
 }
 
-var _ Scheduler = &KubernetesScheduler{}
+var _ scheduler.Scheduler = &KubernetesScheduler{}
 
 // NewKubernetesScheduler creates a Kubernetes scheduler
 func NewKubernetesScheduler(c client.Client) *KubernetesScheduler {
 	return &KubernetesScheduler{
 		client: c,
 	}
+}
+
+func generateProvisionedResources(play *corev1alpha1.Play) ([]runtime.Object, error) {
+	var factory = provider.NewDefaultDepProvider().GetResourceFactory()
+	var provision []*resource.Resource
+	for _, p := range play.Spec.Screenplays[0].Provision.Resources {
+		r, err := factory.FromBytes(p.Raw)
+		if err != nil {
+			return nil, err
+		}
+		provision = append(provision, r)
+
+	}
+
+	// var nameSuffix string
+	// for _, o := range play.OwnerReferences {
+	// 	if o.Kind == "Movie" && o.APIVersion == corev1alpha1.GroupVersion.String() {
+	// 		nameSuffix = strings.TrimPrefix(play.Name, o.Name)
+	// 	}
+	// }
+	return nil, nil
+}
+
+func (ks *KubernetesScheduler) Provision(play *corev1alpha1.Play) error {
+	resources, err := generateProvisionedResources(play)
+	if err != nil {
+		return err
+	}
+	for _, r := range resources {
+		err := ks.client.Create(context.TODO(), r)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (ks *KubernetesScheduler) Deprovision(play *corev1alpha1.Play) error {
+	resources, _ := generateProvisionedResources(play)
+	for _, r := range resources {
+		err := ks.client.Delete(context.TODO(), r)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Run implements Scheduler interface
