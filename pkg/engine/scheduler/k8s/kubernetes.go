@@ -8,14 +8,18 @@ import (
 	"github.com/kuberik/engine/pkg/engine/scheduler"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 
 	batchv1 "k8s.io/api/batch/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/kustomize/api/builtins"
 	"sigs.k8s.io/kustomize/api/provider"
+	"sigs.k8s.io/kustomize/api/resmap"
 	"sigs.k8s.io/kustomize/api/resource"
+	ktypes "sigs.k8s.io/kustomize/api/types"
 )
 
 // KubernetesScheduler defines a Scheduler which executes Plays on Kubernetes
@@ -32,29 +36,63 @@ func NewKubernetesScheduler(c client.Client) *KubernetesScheduler {
 	}
 }
 
-func generateProvisionedResources(play *corev1alpha1.Play) ([]runtime.Object, error) {
-	var factory = provider.NewDefaultDepProvider().GetResourceFactory()
+const (
+	movieKind = "Movie"
+)
+
+func resourcesToObjects(resources ...*resource.Resource) (objects []controllerutil.Object) {
+	for _, r := range resources {
+		objects = append(objects, &unstructured.Unstructured{r.Map()})
+	}
+	return
+}
+
+func provisionedResources(play *corev1alpha1.Play, screenplay string) ([]*resource.Resource, error) {
+	var rf = provider.NewDefaultDepProvider().GetResourceFactory()
 	var provision []*resource.Resource
 	for _, p := range play.Spec.Screenplays[0].Provision.Resources {
-		r, err := factory.FromBytes(p.Raw)
+		r, err := rf.FromBytes(p.Raw)
 		if err != nil {
 			return nil, err
 		}
 		provision = append(provision, r)
+	}
+	return provision, nil
+}
 
+func resourceTransform(play *corev1alpha1.Play, resources ...*resource.Resource) ([]*resource.Resource, error) {
+	rm := resmap.NewFactory(provider.NewDefaultDepProvider().GetResourceFactory(), nil).FromResourceSlice(resources)
+
+	nameTransformer := builtins.PrefixSuffixTransformerPlugin{Suffix: fmt.Sprintf("-%s", play.Name), FieldSpecs: []ktypes.FieldSpec{
+		{Path: "metadata/name"},
+	}}
+
+	err := nameTransformer.Transform(rm)
+	if err != nil {
+		return nil, err
 	}
 
-	// var nameSuffix string
-	// for _, o := range play.OwnerReferences {
-	// 	if o.Kind == "Movie" && o.APIVersion == corev1alpha1.GroupVersion.String() {
-	// 		nameSuffix = strings.TrimPrefix(play.Name, o.Name)
-	// 	}
-	// }
-	return nil, nil
+	return rm.Resources(), nil
+}
+
+func generateProvisionedResources(play *corev1alpha1.Play, screenplay string) ([]controllerutil.Object, error) {
+	provisoned, err := provisionedResources(play, screenplay)
+	if err != nil {
+		return nil, err
+	}
+
+	transformed, err := resourceTransform(play, provisoned...)
+	fmt.Println(transformed[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return resourcesToObjects(transformed...), nil
 }
 
 func (ks *KubernetesScheduler) Provision(play *corev1alpha1.Play) error {
-	resources, err := generateProvisionedResources(play)
+	// TODO remove hardcoded "main"
+	resources, err := generateProvisionedResources(play, "main")
 	if err != nil {
 		return err
 	}
@@ -68,7 +106,8 @@ func (ks *KubernetesScheduler) Provision(play *corev1alpha1.Play) error {
 }
 
 func (ks *KubernetesScheduler) Deprovision(play *corev1alpha1.Play) error {
-	resources, _ := generateProvisionedResources(play)
+	// TODO remove hardcoded "main"
+	resources, _ := generateProvisionedResources(play, "main")
 	for _, r := range resources {
 		err := ks.client.Delete(context.TODO(), r)
 		if err != nil {
