@@ -94,7 +94,7 @@ func TestPlayInit(t *testing.T) {
 				Scenes: []corev1alpha1.Scene{{
 					Frames: []corev1alpha1.Frame{{
 						Name: "test",
-						Action: &corev1alpha1.Exec{
+						Action: &corev1alpha1.Action{
 							Template: corev1.PodTemplateSpec{
 								Spec: corev1.PodSpec{
 									Containers: []corev1.Container{{
@@ -151,7 +151,7 @@ func TestPlayRunning(t *testing.T) {
 				Scenes: []corev1alpha1.Scene{{
 					Frames: []corev1alpha1.Frame{{
 						Name: "test",
-						Action: &corev1alpha1.Exec{
+						Action: &corev1alpha1.Action{
 							Template: corev1.PodTemplateSpec{
 								Spec: corev1.PodSpec{
 									Containers: []corev1.Container{{

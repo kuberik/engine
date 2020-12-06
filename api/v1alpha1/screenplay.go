@@ -108,7 +108,7 @@ type Frame struct {
 	ID     string  `json:"id,omitempty"`
 	Name   string  `json:"name,omitempty"`
 	Copies int     `json:"copies,omitempty"`
-	Action *Exec   `json:"action,omitempty"`
+	Action *Action `json:"action,omitempty"`
 	Story  *string `json:"story,omitempty"`
 }
 
@@ -138,5 +138,9 @@ func (fr FrameStatus) String() string {
 
 // +kubebuilder:object:generate=false
 
-// Exec Represents a running container
-type Exec = batchv1.JobSpec
+// Action represents an action that needs to be executed
+type Action = batchv1.JobSpec
+
+// func (a *Action) FrameID() {
+
+// }

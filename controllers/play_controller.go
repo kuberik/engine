@@ -30,7 +30,6 @@ import (
 
 	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
 	"github.com/kuberik/engine/pkg/engine"
-	"github.com/kuberik/engine/pkg/engine/scheduler/k8s"
 	"github.com/kuberik/engine/pkg/randutils"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -83,14 +82,7 @@ func (r *PlayReconciler) reconcileCreated(instance *corev1alpha1.Play) (reconcil
 }
 
 func (r *PlayReconciler) reconcileInit(instance *corev1alpha1.Play) (reconcile.Result, error) {
-	err := func() error {
-		err := r.provisionVarsConfigMap(instance)
-		if err != nil {
-			return err
-		}
-		err = r.Flow.Scheduler.Provision(instance)
-		return err
-	}()
+	err := r.provisionVarsConfigMap(instance)
 
 	if err != nil {
 		instance.Status.Phase = corev1alpha1.PlayPhaseError
@@ -121,7 +113,7 @@ func (r *PlayReconciler) reconcileRunning(instance *corev1alpha1.Play) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	err := r.Flow.PlayNext(instance)
+	err := r.Flow.Next(instance)
 	if engine.IsPlayEndedErorr(err) {
 		if instance.Status.Failed() {
 			instance.Status.Phase = corev1alpha1.PlayPhaseFailed
@@ -134,7 +126,11 @@ func (r *PlayReconciler) reconcileRunning(instance *corev1alpha1.Play) (reconcil
 }
 
 func (r *PlayReconciler) reconcileComplete(instance *corev1alpha1.Play) (reconcile.Result, error) {
-	return reconcile.Result{}, r.Flow.Scheduler.Deprovision(instance)
+	err := r.Flow.Next(instance)
+	if err != nil && !engine.IsPlayEndedErorr(err) {
+		return reconcile.Result{}, err
+	}
+	return reconcile.Result{}, nil
 }
 
 func (r *PlayReconciler) populateRandomIDs(play *corev1alpha1.Play) {
@@ -170,12 +166,12 @@ func (r *PlayReconciler) provisionVarsConfigMap(instance *corev1alpha1.Play) err
 func (r *PlayReconciler) updateStatus(play *corev1alpha1.Play) error {
 	jobs := &batchv1.JobList{}
 	r.Client.List(context.TODO(), jobs, &client.ListOptions{
-		LabelSelector: k8s.JobLabelSelector(play),
+		LabelSelector: engine.JobLabelSelector(play),
 	})
 
 	var updated bool
 	for _, j := range jobs.Items {
-		frameID := j.Annotations[k8s.JobAnnotationFrameID]
+		frameID := j.Annotations[engine.ActionAnnotationFrameID]
 		if _, ok := play.Status.Frames[frameID]; ok {
 			continue
 		}
@@ -186,11 +182,11 @@ func (r *PlayReconciler) updateStatus(play *corev1alpha1.Play) error {
 		}
 	}
 
-	if !updated {
-		return nil
+	if updated {
+		return r.Client.Status().Update(context.TODO(), play)
 	}
 
-	return r.Client.Status().Update(context.TODO(), play)
+	return nil
 }
 
 func frameStatus(job *batchv1.Job) corev1alpha1.FrameStatus {

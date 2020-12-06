@@ -13,8 +13,8 @@ var (
 	success = corev1alpha1.FrameStatusSuccessful
 )
 
-func helloWorldAction() *corev1alpha1.Exec {
-	return &corev1alpha1.Exec{
+func helloWorldAction() *corev1alpha1.Action {
+	return &corev1alpha1.Action{
 		Template: corev1.PodTemplateSpec{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{
@@ -46,7 +46,7 @@ func TestExpandLoops(t *testing.T) {
 		Scenes: []corev1alpha1.Scene{{
 			Frames: []corev1alpha1.Frame{{
 				Copies: 3,
-				Action: &corev1alpha1.Exec{
+				Action: &corev1alpha1.Action{
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
@@ -55,10 +55,8 @@ func TestExpandLoops(t *testing.T) {
 						},
 					},
 				},
-			},
-			},
-		},
-		},
+			}},
+		}},
 	}
 	expandCopies(&corev1alpha1.PlaySpec{
 		Screenplays: []corev1alpha1.Screenplay{
@@ -83,7 +81,7 @@ func TestExpandLoops(t *testing.T) {
 	}
 }
 
-func TestPlayNextLoop(t *testing.T) {
+func TestNextLoop(t *testing.T) {
 	play := &corev1alpha1.Play{
 		Spec: corev1alpha1.PlaySpec{
 			Screenplays: []corev1alpha1.Screenplay{{
@@ -125,7 +123,7 @@ func TestPlayNextLoop(t *testing.T) {
 	}
 
 	flow := NewFlow(&scheduler.DummyScheduler{})
-	flow.PlayNext(play)
+	flow.Next(play)
 	// Mark "a" as not played
 	delete(play.Status.Frames, "a")
 	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
@@ -135,7 +133,7 @@ func TestPlayNextLoop(t *testing.T) {
 		"d": nil,
 	})
 
-	flow.PlayNext(play)
+	flow.Next(play)
 	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": &success,
@@ -143,7 +141,7 @@ func TestPlayNextLoop(t *testing.T) {
 		"d": nil,
 	})
 
-	flow.PlayNext(play)
+	flow.Next(play)
 	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": &success,
@@ -152,7 +150,7 @@ func TestPlayNextLoop(t *testing.T) {
 	})
 }
 
-func TestPlayNextWithCredits(t *testing.T) {
+func TestNextWithCredits(t *testing.T) {
 	play := &corev1alpha1.Play{
 		Spec: corev1alpha1.PlaySpec{
 			Screenplays: []corev1alpha1.Screenplay{{
@@ -196,7 +194,7 @@ func TestPlayNextWithCredits(t *testing.T) {
 	}
 
 	flow := NewFlow(&scheduler.DummyScheduler{})
-	flow.PlayNext(play)
+	flow.Next(play)
 	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": nil,
@@ -204,7 +202,7 @@ func TestPlayNextWithCredits(t *testing.T) {
 		"d": nil,
 	})
 
-	flow.PlayNext(play)
+	flow.Next(play)
 	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": &success,
@@ -212,7 +210,7 @@ func TestPlayNextWithCredits(t *testing.T) {
 		"d": nil,
 	})
 
-	flow.PlayNext(play)
+	flow.Next(play)
 	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": &success,
@@ -220,7 +218,7 @@ func TestPlayNextWithCredits(t *testing.T) {
 		"d": nil,
 	})
 
-	flow.PlayNext(play)
+	flow.Next(play)
 	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
 		"b": &success,
@@ -229,7 +227,7 @@ func TestPlayNextWithCredits(t *testing.T) {
 	})
 }
 
-func TestPlayNextFailedPlay(t *testing.T) {
+func TestNextFailedPlay(t *testing.T) {
 	play := &corev1alpha1.Play{
 		Spec: corev1alpha1.PlaySpec{
 			Screenplays: []corev1alpha1.Screenplay{{
@@ -271,7 +269,7 @@ func TestPlayNextFailedPlay(t *testing.T) {
 	}
 
 	flow := NewFlow(&scheduler.DummyScheduler{})
-	flow.PlayNext(play)
+	flow.Next(play)
 	// Mark "a" as not played
 	delete(play.Status.Frames, "a")
 	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
@@ -282,7 +280,7 @@ func TestPlayNextFailedPlay(t *testing.T) {
 	})
 
 	flow = NewFlow(&scheduler.DummyScheduler{Result: 1})
-	flow.PlayNext(play)
+	flow.Next(play)
 	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &failed,
 		"b": &success,
@@ -290,7 +288,7 @@ func TestPlayNextFailedPlay(t *testing.T) {
 		"d": nil,
 	})
 
-	err := flow.PlayNext(play)
+	err := flow.Next(play)
 	if !IsPlayEndedErorr(err) {
 		t.Errorf("Play should have ended")
 	}

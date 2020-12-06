@@ -29,8 +29,9 @@ func NewFlow(scheduler scheduler.Scheduler) Flow {
 	}
 }
 
-// PlayNext executes all actions that are possible to play at the current stage
-func (f *Flow) PlayNext(play *corev1alpha1.Play) error {
+// Next executes the next aciton in the flow of a Play
+// This function should be called whenever a new Play event occurs
+func (f *Flow) Next(play *corev1alpha1.Play) error {
 	// Expand definition
 	populateVars(play, play.Status.VarsConfigMap)
 	expandCopies(&play.Spec)
@@ -47,6 +48,14 @@ func framesFinished(status *corev1alpha1.PlayStatus, frames []corev1alpha1.Frame
 }
 
 func (f *Flow) playScreenplay(play *corev1alpha1.Play, name string) error {
+	// TODO Run only if screenplay didn't start (i.e. there's no condition for screenplay in progress)
+	if true {
+		provisionedResources, _ := generateProvisionedResources(play, name)
+		if err := f.Scheduler.Deprovision(provisionedResources); err != nil {
+			return err
+		}
+	}
+
 	screenplay := play.Screenplay(name)
 	if screenplay == nil {
 		return fmt.Errorf("Screenplay '%s' not found in the Play", name)
@@ -71,7 +80,12 @@ func (f *Flow) playScreenplay(play *corev1alpha1.Play, name string) error {
 		return f.playFrames(play, screenplay.Credits.Closing)
 	}
 
-	return NewError(NoMoreFrames)
+	provisionedResources, _ := generateProvisionedResources(play, name)
+	if err := f.Scheduler.Deprovision(provisionedResources); err != nil {
+		return err
+	}
+
+	return NewError(PlayFinished)
 }
 
 func (f *Flow) playFrames(play *corev1alpha1.Play, frames []corev1alpha1.Frame) error {
@@ -88,7 +102,7 @@ func (f *Flow) playFrames(play *corev1alpha1.Play, frames []corev1alpha1.Frame) 
 }
 
 func (f *Flow) playFrame(play *corev1alpha1.Play, frameID string) error {
-	err := f.Scheduler.Run(play, frameID)
+	err := f.Scheduler.Run(newAction(play, frameID))
 	if err != nil {
 		log.Errorf("Failed to play %s from %s: %s", frameID, play.Name, err)
 	}
