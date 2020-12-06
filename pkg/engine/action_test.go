@@ -40,7 +40,6 @@ spec:
 		},
 	}
 	provisioned, err := generateProvisionedResources(play, screenplayName)
-	fmt.Println(provisioned[0])
 	if err != nil {
 		t.Fatalf("Failed to generate resources: %s", err)
 	}

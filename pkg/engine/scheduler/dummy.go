@@ -10,6 +10,7 @@ import (
 type DummyScheduler struct {
 	// Result is a value that dummy scheduler sets as a result status of any frame played
 	Result corev1alpha1.FrameStatus
+	Play   *corev1alpha1.Play
 }
 
 var _ Scheduler = &DummyScheduler{}
@@ -26,7 +27,7 @@ func (s *DummyScheduler) Deprovision(resource []*resource.Resource) error {
 
 // Run implements Scheduler interface
 func (s *DummyScheduler) Run(job batchv1.Job) error {
-	// TODO restore
-	// play.Status.SetFrameStatus(frameID, s.Result)
+	// TODO replace hardcoded value
+	s.Play.Status.SetFrameStatus(job.Annotations["core.kuberik.io/frameID"], s.Result)
 	return nil
 }

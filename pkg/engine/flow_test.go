@@ -122,7 +122,7 @@ func TestNextLoop(t *testing.T) {
 		},
 	}
 
-	flow := NewFlow(&scheduler.DummyScheduler{})
+	flow := NewFlow(&scheduler.DummyScheduler{Play: play})
 	flow.Next(play)
 	// Mark "a" as not played
 	delete(play.Status.Frames, "a")
@@ -193,7 +193,7 @@ func TestNextWithCredits(t *testing.T) {
 		},
 	}
 
-	flow := NewFlow(&scheduler.DummyScheduler{})
+	flow := NewFlow(&scheduler.DummyScheduler{Play: play})
 	flow.Next(play)
 	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &success,
@@ -268,7 +268,7 @@ func TestNextFailedPlay(t *testing.T) {
 		},
 	}
 
-	flow := NewFlow(&scheduler.DummyScheduler{})
+	flow := NewFlow(&scheduler.DummyScheduler{Play: play})
 	flow.Next(play)
 	// Mark "a" as not played
 	delete(play.Status.Frames, "a")
@@ -279,7 +279,7 @@ func TestNextFailedPlay(t *testing.T) {
 		"d": nil,
 	})
 
-	flow = NewFlow(&scheduler.DummyScheduler{Result: 1})
+	flow = NewFlow(&scheduler.DummyScheduler{Play: play, Result: corev1alpha1.FrameStatusFailed})
 	flow.Next(play)
 	assertFrameState(t, play, map[string]*corev1alpha1.FrameStatus{
 		"a": &failed,
