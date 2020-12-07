@@ -1,48 +1,36 @@
 package engine
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
+	"github.com/kuberik/engine/pkg/engine/internal/kustomize"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
 	batchv1 "k8s.io/api/batch/v1"
 
-	"sigs.k8s.io/kustomize/api/builtins"
-	"sigs.k8s.io/kustomize/api/provider"
-	"sigs.k8s.io/kustomize/api/resmap"
 	"sigs.k8s.io/kustomize/api/resource"
-	ktypes "sigs.k8s.io/kustomize/api/types"
 )
 
 const (
 	movieKind = "Movie"
 )
 
-func provisionedResources(play *corev1alpha1.Play, screenplay string) ([]*resource.Resource, error) {
-	var rf = provider.NewDefaultDepProvider().GetResourceFactory()
-	var provision []*resource.Resource
+func provisionedResourcesLayer(play *corev1alpha1.Play, screenplay string) kustomize.KustomizeLayer {
+	kl := kustomize.NewKustomizeLayerRoot()
 	for _, p := range play.Spec.Screenplays[0].Provision.Resources {
-		r, err := rf.FromBytes(p.Raw)
-		if err != nil {
-			return nil, err
-		}
-		provision = append(provision, r)
+		kl.AddObjectRaw(p.Raw)
 	}
-	return provision, nil
+	return kl
 }
 
-func resourceTransform(play *corev1alpha1.Play, resources ...*resource.Resource) ([]*resource.Resource, error) {
-	rm := resmap.NewFactory(provider.NewDefaultDepProvider().GetResourceFactory(), nil).FromResourceSlice(resources)
-
-	nameTransformer := builtins.PrefixSuffixTransformerPlugin{Suffix: fmt.Sprintf("-%s", play.Name), FieldSpecs: []ktypes.FieldSpec{
-		{Path: "metadata/name"},
-	}}
-
-	err := nameTransformer.Transform(rm)
+func generateFinalLayer(play *corev1alpha1.Play, layer kustomize.KustomizeLayer) ([]*resource.Resource, error) {
+	layer.Kustomization.NameSuffix = fmt.Sprintf("-%s", play.Name)
+	rm, err := layer.Run()
 	if err != nil {
 		return nil, err
 	}
@@ -51,23 +39,31 @@ func resourceTransform(play *corev1alpha1.Play, resources ...*resource.Resource)
 }
 
 func generateProvisionedResources(play *corev1alpha1.Play, screenplay string) ([]*resource.Resource, error) {
-	provisoned, err := provisionedResources(play, screenplay)
-	if err != nil {
-		return nil, err
+	return generateFinalLayer(play, provisionedResourcesLayer(play, screenplay))
+}
+
+func generateJob(play *corev1alpha1.Play, screenplay string, action batchv1.Job) batchv1.Job {
+	pl := provisionedResourcesLayer(play, screenplay)
+
+	jl := pl.AddLayer()
+	jl.AddObject(action)
+
+	resources, _ := generateFinalLayer(play, jl)
+	for _, r := range resources {
+		if r.GetKind() == "Job" {
+			transformedAction := batchv1.Job{}
+			transformedActionMarshaled, _ := json.Marshal(r)
+			json.Unmarshal(transformedActionMarshaled, &transformedAction)
+			return transformedAction
+		}
 	}
 
-	transformed, err := resourceTransform(play, provisoned...)
-	if err != nil {
-		return nil, err
-	}
-
-	return transformed, nil
+	panic("transformation lost input action")
 }
 
 var (
-	falseVal       = false
-	trueVal        = true
-	zero     int32 = 0
+	trueVal       = true
+	zero    int32 = 0
 )
 
 const (
@@ -112,6 +108,10 @@ func newAction(play *corev1alpha1.Play, frameID string) batchv1.Job {
 	}
 
 	job := batchv1.Job{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Job",
+			APIVersion: "v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			// maximum string for job name is 63 characters.
 			Name:        actionName(play, frameID),

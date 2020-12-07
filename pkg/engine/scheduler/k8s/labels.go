@@ -8,10 +8,7 @@ import (
 
 const (
 	// JobLabelPlay is name of a label which stores name of the play that owns frame of this job
-	JobLabelPlay = "kuberik.io/play"
-
-	// JobAnnotationFrameID is name of a label which stores ID of the frame that owns the job
-	JobAnnotationFrameID = "kuberik.io/frameID"
+	JobLabelPlay = "core.kuberik.io/play"
 )
 
 func JobLabelSelector(play *corev1alpha1.Play) labels.Selector {
