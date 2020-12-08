@@ -4,13 +4,15 @@ import (
 	"fmt"
 
 	batchv1 "k8s.io/api/batch/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
 // Screenplay describes how pipeline execution will look like.
 type Screenplay struct {
-	Name    string   `json:"name,omitempty"`
-	Scenes  []Scene  `json:"scenes,omitempty"`
-	Credits *Credits `json:"credits,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Provision `json:"provision,omitempty"`
+	Scenes    []Scene  `json:"scenes,omitempty"`
+	Credits   *Credits `json:"credits,omitempty"`
 }
 
 // Credits describe actions that need to be run at the start or at the end of a screenplay.
@@ -23,6 +25,10 @@ type Credits struct {
 	// Finished in this case means started and ended with any result.
 	// This provides a way to run some tasks even if some frames failed.
 	Closing []Frame `json:"closing,omitempty"`
+}
+
+type Provision struct {
+	Resources []runtime.RawExtension `json:"resources,omitempty"`
 }
 
 // Var is a parametrizable variable for the screenplay shared between all jobs.
@@ -102,7 +108,7 @@ type Frame struct {
 	ID     string  `json:"id,omitempty"`
 	Name   string  `json:"name,omitempty"`
 	Copies int     `json:"copies,omitempty"`
-	Action *Exec   `json:"action,omitempty"`
+	Action *Action `json:"action,omitempty"`
 	Story  *string `json:"story,omitempty"`
 }
 
@@ -132,5 +138,9 @@ func (fr FrameStatus) String() string {
 
 // +kubebuilder:object:generate=false
 
-// Exec Represents a running container
-type Exec = batchv1.JobSpec
+// Action represents an action that needs to be executed
+type Action = batchv1.JobSpec
+
+// func (a *Action) FrameID() {
+
+// }

@@ -23,7 +23,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/prometheus/common/log"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,7 +30,6 @@ import (
 
 	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
 	"github.com/kuberik/engine/pkg/engine"
-	"github.com/kuberik/engine/pkg/engine/scheduler"
 	"github.com/kuberik/engine/pkg/randutils"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -84,14 +82,7 @@ func (r *PlayReconciler) reconcileCreated(instance *corev1alpha1.Play) (reconcil
 }
 
 func (r *PlayReconciler) reconcileInit(instance *corev1alpha1.Play) (reconcile.Result, error) {
-	err := func() error {
-		err := r.provisionVarsConfigMap(instance)
-		if err != nil {
-			return err
-		}
-		err = r.provisionVolumes(instance)
-		return err
-	}()
+	err := r.provisionVarsConfigMap(instance)
 
 	if err != nil {
 		instance.Status.Phase = corev1alpha1.PlayPhaseError
@@ -122,7 +113,7 @@ func (r *PlayReconciler) reconcileRunning(instance *corev1alpha1.Play) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	err := r.Flow.PlayNext(instance)
+	err := r.Flow.Next(instance)
 	if engine.IsPlayEndedErorr(err) {
 		if instance.Status.Failed() {
 			instance.Status.Phase = corev1alpha1.PlayPhaseFailed
@@ -135,18 +126,11 @@ func (r *PlayReconciler) reconcileRunning(instance *corev1alpha1.Play) (reconcil
 }
 
 func (r *PlayReconciler) reconcileComplete(instance *corev1alpha1.Play) (reconcile.Result, error) {
-	for _, pvcName := range instance.Status.ProvisionedVolumes {
-		r.Client.Delete(context.TODO(), &corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      pvcName,
-				Namespace: instance.Namespace,
-			},
-		})
+	err := r.Flow.Next(instance)
+	if err != nil && !engine.IsPlayEndedErorr(err) {
+		return reconcile.Result{}, err
 	}
-	instance.Status.ProvisionedVolumes = make(map[string]string)
-	err := r.Client.Status().Update(context.TODO(), instance)
-	log.Info(fmt.Sprintf("Play %s competed with status: %s", instance.Name, instance.Status.Phase))
-	return reconcile.Result{}, err
+	return reconcile.Result{}, nil
 }
 
 func (r *PlayReconciler) populateRandomIDs(play *corev1alpha1.Play) {
@@ -182,19 +166,12 @@ func (r *PlayReconciler) provisionVarsConfigMap(instance *corev1alpha1.Play) err
 func (r *PlayReconciler) updateStatus(play *corev1alpha1.Play) error {
 	jobs := &batchv1.JobList{}
 	r.Client.List(context.TODO(), jobs, &client.ListOptions{
-		LabelSelector: func() labels.Selector {
-			ls, _ := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					scheduler.JobLabelPlay: play.Name,
-				},
-			})
-			return ls
-		}(),
+		LabelSelector: engine.JobLabelSelector(play),
 	})
 
 	var updated bool
 	for _, j := range jobs.Items {
-		frameID := j.Annotations[scheduler.JobAnnotationFrameID]
+		frameID := j.Annotations[engine.ActionAnnotationFrameID]
 		if _, ok := play.Status.Frames[frameID]; ok {
 			continue
 		}
@@ -205,39 +182,11 @@ func (r *PlayReconciler) updateStatus(play *corev1alpha1.Play) error {
 		}
 	}
 
-	if !updated {
-		return nil
+	if updated {
+		return r.Client.Status().Update(context.TODO(), play)
 	}
 
-	return r.Client.Status().Update(context.TODO(), play)
-}
-
-// ProvisionVolumes provisions volumes for the duration of the play
-func (r *PlayReconciler) provisionVolumes(play *corev1alpha1.Play) (err error) {
-	if play.Status.ProvisionedVolumes == nil {
-		play.Status.ProvisionedVolumes = make(map[string]string)
-	}
-
-	for _, volumeClaimTemplate := range play.Spec.VolumeClaimTemplates {
-		pvcName := fmt.Sprintf("%s-%s", play.Name, volumeClaimTemplate.Name)
-
-		err = r.Client.Create(context.TODO(), &corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      pvcName,
-				Namespace: play.Namespace,
-				Labels: map[string]string{
-					"core.kuberik.io/play": play.Name,
-				},
-			},
-			Spec: volumeClaimTemplate.Spec,
-		})
-
-		if err != nil && !errors.IsAlreadyExists(err) {
-			return
-		}
-		play.Status.ProvisionedVolumes[volumeClaimTemplate.Name] = pvcName
-	}
-	return
+	return nil
 }
 
 func frameStatus(job *batchv1.Job) corev1alpha1.FrameStatus {

@@ -4,8 +4,8 @@ package engine
 type PlayRunErrorMessage string
 
 const (
-	// NoMoreFrames is a message provided when there's no more frames to play
-	NoMoreFrames PlayRunErrorMessage = "No more frames to play"
+	// PlayFinished is a message provided when there's no more computing to do for the Play
+	PlayFinished PlayRunErrorMessage = "play finished"
 
 	// UnknownMessage is a message provided when unknown error happened
 	UnknownMessage PlayRunErrorMessage = ""
@@ -30,7 +30,7 @@ func NewError(m PlayRunErrorMessage) PlayRunError {
 // IsPlayEndedErorr checks if error indicates end of the play
 func IsPlayEndedErorr(err error) bool {
 	switch MessageForError(err) {
-	case NoMoreFrames:
+	case PlayFinished:
 		return true
 	}
 	return false

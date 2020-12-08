@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,9 +28,8 @@ type PlaySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Screenplays          []Screenplay                   `json:"screenplays"`
-	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
-	Vars                 Vars                           `json:"vars,omitempty"`
+	Screenplays []Screenplay `json:"screenplays"`
+	Vars        Vars         `json:"vars,omitempty"`
 }
 
 // PlayStatus defines the observed state of Play
@@ -39,10 +37,9 @@ type PlayStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Frames             map[string]FrameStatus `json:"frames,omitempty"`
-	Phase              PlayPhaseType          `json:"phase,omitempty"`
-	ProvisionedVolumes map[string]string      `json:"provisionedVolumes,omitempty"`
-	VarsConfigMap      string                 `json:"varsConfigMap,omitempty"`
+	Frames        map[string]FrameStatus `json:"frames,omitempty"`
+	Phase         PlayPhaseType          `json:"phase,omitempty"`
+	VarsConfigMap string                 `json:"varsConfigMap,omitempty"`
 }
 
 // SetFrameStatus sets result of a frame

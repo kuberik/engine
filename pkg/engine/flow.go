@@ -19,22 +19,22 @@ const (
 // For scene to be completed, all its frames need to be completed
 // Frames of a Scene are executed in parallel
 type Flow struct {
-	scheduler scheduler.Scheduler
+	Scheduler scheduler.Scheduler
 }
 
 // NewFlow creates a new Flow that executes actions with given Scheduler
 func NewFlow(scheduler scheduler.Scheduler) Flow {
 	return Flow{
-		scheduler: scheduler,
+		Scheduler: scheduler,
 	}
 }
 
-// PlayNext executes all actions that are possible to play at the current stage
-func (f *Flow) PlayNext(play *corev1alpha1.Play) error {
+// Next executes the next aciton in the flow of a Play
+// This function should be called whenever a new Play event occurs
+func (f *Flow) Next(play *corev1alpha1.Play) error {
 	// Expand definition
 	populateVars(play, play.Status.VarsConfigMap)
 	expandCopies(&play.Spec)
-	expandProvisionedVolumes(play)
 	return f.playScreenplay(play, mainScreenplayName)
 }
 
@@ -48,6 +48,15 @@ func framesFinished(status *corev1alpha1.PlayStatus, frames []corev1alpha1.Frame
 }
 
 func (f *Flow) playScreenplay(play *corev1alpha1.Play, name string) error {
+	// TODO Run only if screenplay didn't start (i.e. there's no condition for screenplay in progress)
+	if true {
+		provisionedResources, _ := generateProvisionedResources(play, name)
+		if err := f.Scheduler.Provision(provisionedResources); err != nil {
+			log.Errorf("provisioning error (play=%s/%s)", play.Namespace, play.Name)
+			return err
+		}
+	}
+
 	screenplay := play.Screenplay(name)
 	if screenplay == nil {
 		return fmt.Errorf("Screenplay '%s' not found in the Play", name)
@@ -72,7 +81,13 @@ func (f *Flow) playScreenplay(play *corev1alpha1.Play, name string) error {
 		return f.playFrames(play, screenplay.Credits.Closing)
 	}
 
-	return NewError(NoMoreFrames)
+	provisionedResources, _ := generateProvisionedResources(play, name)
+	if err := f.Scheduler.Deprovision(provisionedResources); err != nil {
+		log.Errorf("deprovisioning error (play=%s/%s)", play.Namespace, play.Name)
+		return err
+	}
+
+	return NewError(PlayFinished)
 }
 
 func (f *Flow) playFrames(play *corev1alpha1.Play, frames []corev1alpha1.Frame) error {
@@ -89,7 +104,7 @@ func (f *Flow) playFrames(play *corev1alpha1.Play, frames []corev1alpha1.Frame) 
 }
 
 func (f *Flow) playFrame(play *corev1alpha1.Play, frameID string) error {
-	err := f.scheduler.Run(play, frameID)
+	err := f.Scheduler.Run(generateActionJob(play, mainScreenplayName, frameID))
 	if err != nil {
 		log.Errorf("Failed to play %s from %s: %s", frameID, play.Name, err)
 	}
@@ -120,55 +135,6 @@ func expandCopies(playSpec *corev1alpha1.PlaySpec) {
 				}
 			}
 			playSpec.Screenplays[k].Scenes[si].Frames = frames
-		}
-	}
-}
-
-func expandProvisionedVolumes(play *corev1alpha1.Play) {
-	volumes := play.Status.ProvisionedVolumes
-	for k := range play.Spec.Screenplays {
-		for si := range play.Spec.Screenplays[k].Scenes {
-			for fi := range play.Spec.Screenplays[k].Scenes[si].Frames {
-			volumes:
-				for volumeName, provisionedVolumeName := range volumes {
-					for _, container := range play.Spec.Screenplays[k].Scenes[si].Frames[fi].Action.Template.Spec.Containers {
-						for _, m := range container.VolumeMounts {
-							if m.Name == volumeName {
-								play.Spec.Screenplays[k].Scenes[si].Frames[fi].Action.Template.Spec.Volumes = append(
-									play.Spec.Screenplays[k].Scenes[si].Frames[fi].Action.Template.Spec.Volumes,
-									corev1.Volume{
-										Name: volumeName,
-										VolumeSource: corev1.VolumeSource{
-											PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-												ClaimName: provisionedVolumeName,
-											},
-										},
-									},
-								)
-								continue volumes
-							}
-						}
-					}
-					for _, container := range play.Spec.Screenplays[k].Scenes[si].Frames[fi].Action.Template.Spec.InitContainers {
-						for _, m := range container.VolumeMounts {
-							if m.Name == volumeName {
-								play.Spec.Screenplays[k].Scenes[si].Frames[fi].Action.Template.Spec.Volumes = append(
-									play.Spec.Screenplays[k].Scenes[si].Frames[fi].Action.Template.Spec.Volumes,
-									corev1.Volume{
-										Name: volumeName,
-										VolumeSource: corev1.VolumeSource{
-											PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-												ClaimName: provisionedVolumeName,
-											},
-										},
-									},
-								)
-								continue volumes
-							}
-						}
-					}
-				}
-			}
 		}
 	}
 }
