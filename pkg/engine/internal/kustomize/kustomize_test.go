@@ -2,7 +2,6 @@ package kustomize
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -82,7 +81,6 @@ spec:
 		case "Pod":
 			podFound = true
 			podMarshaled, _ := r.MarshalJSON()
-			fmt.Println(string(podMarshaled))
 			pod := corev1.Pod{}
 			json.Unmarshal(podMarshaled, &pod)
 			got := pod.Spec.Containers[0].EnvFrom[0].ConfigMapRef.Name

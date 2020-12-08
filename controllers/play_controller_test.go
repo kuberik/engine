@@ -11,11 +11,18 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var (
@@ -31,6 +38,7 @@ func init() {
 	reconcilePlay = &PlayReconciler{
 		Client: playClient,
 		Scheme: scheme,
+		Log:    ctrl.Log.WithName("controllers").WithName("Play"),
 		Flow:   engine.NewFlow(k8s.NewKubernetesScheduler(playClient)),
 	}
 }
@@ -149,6 +157,7 @@ func TestPlayRunning(t *testing.T) {
 			Screenplays: []corev1alpha1.Screenplay{{
 				Name: "main",
 				Scenes: []corev1alpha1.Scene{{
+					Name: "test",
 					Frames: []corev1alpha1.Frame{{
 						Name: "test",
 						Action: &corev1alpha1.Action{
@@ -193,11 +202,11 @@ func TestPlayRunning(t *testing.T) {
 
 	job := &batchv1.Job{}
 	err = playClient.Get(context.TODO(), types.NamespacedName{
-		Name:      fmt.Sprintf("%.46s-%.16s", play.Name, play.Screenplay("main").Scenes[0].Frames[0].ID),
+		Name:      fmt.Sprintf("%s-%s", play.Screenplay("main").Scenes[0].Frames[0].Name, play.Name),
 		Namespace: play.Namespace,
 	}, job)
 	if err != nil {
-		t.Error("Expected a created job to run the play")
+		t.Errorf("Failed to find a job created by the Play: %s", err)
 	}
 
 	job.Status.Conditions = append(job.Status.Conditions, batchv1.JobCondition{
@@ -211,7 +220,7 @@ func TestPlayRunning(t *testing.T) {
 
 	playClient.Get(context.TODO(), nn, play)
 	if play.Status.Phase != corev1alpha1.PlayPhaseComplete {
-		t.Error("Play didn't finish succesfully")
+		t.Errorf("Play state want %s, got %s", corev1alpha1.PlayPhaseComplete, play.Status.Phase)
 	}
 }
 
@@ -278,3 +287,67 @@ func TestGetAllFrames(t *testing.T) {
 		t.Errorf("Expected to retrieve %v frames, got %v", len(frames), l)
 	}
 }
+
+var _ = Describe("Play controller", func() {
+	const (
+		PlayName      = "test"
+		PlayNamespace = "default"
+
+		timeout  = time.Second * 10
+		duration = time.Second * 10
+		interval = time.Millisecond * 250
+	)
+
+	provisionedCM := corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "foo",
+		},
+	}
+
+	Context("When creating Play with jobs referencing provisioned objects", func() {
+		It("Should create jobs referencing the names of the provisioned objects with their suffixes", func() {
+			By("By creating a new Play")
+			ctx := context.Background()
+			play := &corev1alpha1.Play{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: corev1alpha1.GroupVersion.String(),
+					Kind:       "Play",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      PlayName,
+					Namespace: PlayNamespace,
+				},
+				Spec: corev1alpha1.PlaySpec{
+					Screenplays: []corev1alpha1.Screenplay{{
+						Name: "main",
+						Provision: corev1alpha1.Provision{
+							Resources: []runtime.RawExtension{{Object: &provisionedCM}},
+						},
+						Scenes: []corev1alpha1.Scene{{
+							Frames: []corev1alpha1.Frame{{
+								Action: &corev1alpha1.Action{Template: corev1.PodTemplateSpec{Spec: corev1.PodSpec{Containers: []corev1.Container{{}}}}},
+							}},
+						}},
+					}},
+				},
+			}
+			Expect(k8sClient.Create(ctx, play)).Should(Succeed())
+
+			playLookupKey := types.NamespacedName{Name: play.Name, Namespace: play.Namespace}
+			createdPlay := &corev1alpha1.Play{}
+
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, playLookupKey, createdPlay)
+				if err != nil {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+		})
+	})
+
+})

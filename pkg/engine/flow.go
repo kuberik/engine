@@ -51,7 +51,8 @@ func (f *Flow) playScreenplay(play *corev1alpha1.Play, name string) error {
 	// TODO Run only if screenplay didn't start (i.e. there's no condition for screenplay in progress)
 	if true {
 		provisionedResources, _ := generateProvisionedResources(play, name)
-		if err := f.Scheduler.Deprovision(provisionedResources); err != nil {
+		if err := f.Scheduler.Provision(provisionedResources); err != nil {
+			log.Errorf("provisioning error (play=%s/%s)", play.Namespace, play.Name)
 			return err
 		}
 	}
@@ -82,6 +83,7 @@ func (f *Flow) playScreenplay(play *corev1alpha1.Play, name string) error {
 
 	provisionedResources, _ := generateProvisionedResources(play, name)
 	if err := f.Scheduler.Deprovision(provisionedResources); err != nil {
+		log.Errorf("deprovisioning error (play=%s/%s)", play.Namespace, play.Name)
 		return err
 	}
 
@@ -102,7 +104,7 @@ func (f *Flow) playFrames(play *corev1alpha1.Play, frames []corev1alpha1.Frame) 
 }
 
 func (f *Flow) playFrame(play *corev1alpha1.Play, frameID string) error {
-	err := f.Scheduler.Run(newAction(play, frameID))
+	err := f.Scheduler.Run(generateActionJob(play, mainScreenplayName, frameID))
 	if err != nil {
 		log.Errorf("Failed to play %s from %s: %s", frameID, play.Name, err)
 	}

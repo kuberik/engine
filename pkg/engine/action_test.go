@@ -71,7 +71,8 @@ metadata:
 				},
 				Scenes: []corev1alpha1.Scene{{
 					Frames: []corev1alpha1.Frame{{
-						ID: "a",
+						Name: "a",
+						ID:   "a",
 						Action: &corev1alpha1.Action{
 							Template: corev1.PodTemplateSpec{
 								Spec: corev1.PodSpec{
@@ -92,8 +93,7 @@ metadata:
 		},
 	}
 	provisioned, _ := generateProvisionedResources(play, screenplayName)
-	job := newAction(play, "a")
-	job = generateJob(play, screenplayName, job)
+	job := generateActionJob(play, screenplayName, "a")
 
 	if provisioned[0].GetName() != job.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName {
 		t.Errorf("Want '%s' name for provisioned resource, but got %s", provisioned[0].GetName(), job.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName)

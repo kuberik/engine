@@ -42,13 +42,17 @@ func generateProvisionedResources(play *corev1alpha1.Play, screenplay string) ([
 	return generateFinalLayer(play, provisionedResourcesLayer(play, screenplay))
 }
 
-func generateJob(play *corev1alpha1.Play, screenplay string, action batchv1.Job) batchv1.Job {
+func generateActionJob(play *corev1alpha1.Play, screenplay string, frameID string) batchv1.Job {
 	pl := provisionedResourcesLayer(play, screenplay)
 
+	action := newAction(play, frameID)
 	jl := pl.AddLayer()
 	jl.AddObject(action)
 
-	resources, _ := generateFinalLayer(play, jl)
+	resources, err := generateFinalLayer(play, jl)
+	if err != nil {
+		panic("failed creating a job")
+	}
 	for _, r := range resources {
 		if r.GetKind() == "Job" {
 			transformedAction := batchv1.Job{}
@@ -70,15 +74,11 @@ const (
 	ActionAnnotationFrameID = "core.kuberik.io/frameID"
 )
 
-func actionName(play *corev1alpha1.Play, frameID string) string {
-	return fmt.Sprintf("%.46s-%.16s", play.Name, frameID)
-}
-
-func actionLabels(play *corev1alpha1.Play, frameID string) labels.Set {
+func actionLabels(play *corev1alpha1.Play, frameName string) labels.Set {
 	return map[string]string{
 		// TODO replace with frame name
-		"app.kubernetes.io/name":     frameID,
-		"app.kubernetes.io/instance": actionName(play, frameID),
+		"app.kubernetes.io/name":     frameName,
+		"app.kubernetes.io/instance": fmt.Sprintf("%s-%s", frameName, play.Name),
 		// TODO replace with actual version of kuberik
 		"app.kubernetes.io/version":    os.Getenv("TODOVERSION"),
 		"app.kubernetes.io/component":  "action",
@@ -88,7 +88,8 @@ func actionLabels(play *corev1alpha1.Play, frameID string) labels.Set {
 }
 
 func newAction(play *corev1alpha1.Play, frameID string) batchv1.Job {
-	e := play.Frame(frameID).Action
+	f := play.Frame(frameID)
+	e := f.Action
 
 	// TODO replace with owner reference
 	annotations := map[string]string{
@@ -98,7 +99,7 @@ func newAction(play *corev1alpha1.Play, frameID string) batchv1.Job {
 		annotations[k] = v
 	}
 
-	e.Template.Labels = labels.Merge(e.Template.Labels, actionLabels(play, frameID))
+	e.Template.Labels = labels.Merge(e.Template.Labels, actionLabels(play, f.Name))
 
 	if e.BackoffLimit == nil {
 		e.BackoffLimit = &zero
@@ -114,7 +115,7 @@ func newAction(play *corev1alpha1.Play, frameID string) batchv1.Job {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			// maximum string for job name is 63 characters.
-			Name:        actionName(play, frameID),
+			Name:        f.Name,
 			Namespace:   play.Namespace,
 			Annotations: annotations,
 			Labels:      e.Template.Labels,
@@ -126,7 +127,7 @@ func newAction(play *corev1alpha1.Play, frameID string) batchv1.Job {
 				Controller: &trueVal,
 			}},
 		},
-		Spec: *e,
+		Spec: *e.DeepCopy(),
 	}
 
 	return job
@@ -140,7 +141,8 @@ const (
 func JobLabelSelector(play *corev1alpha1.Play) labels.Selector {
 	ls, _ := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			JobLabelPlay: play.Name,
+			"app.kubernetes.io/part-of":    play.Name,
+			"app.kubernetes.io/managed-by": "kuberik",
 		},
 	})
 	return ls
