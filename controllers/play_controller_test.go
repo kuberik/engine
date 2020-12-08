@@ -309,7 +309,7 @@ var _ = Describe("Play controller", func() {
 	}
 
 	Context("When creating Play with jobs referencing provisioned objects", func() {
-		It("Should create jobs referencing the names of the provisioned objects with their suffixes", func() {
+		It("Should create provisioned objects and jobs referencing those", func() {
 			By("By creating a new Play")
 			ctx := context.Background()
 			play := &corev1alpha1.Play{
@@ -328,8 +328,17 @@ var _ = Describe("Play controller", func() {
 							Resources: []runtime.RawExtension{{Object: &provisionedCM}},
 						},
 						Scenes: []corev1alpha1.Scene{{
+							Name: "test",
 							Frames: []corev1alpha1.Frame{{
-								Action: &corev1alpha1.Action{Template: corev1.PodTemplateSpec{Spec: corev1.PodSpec{Containers: []corev1.Container{{}}}}},
+								Name: "test",
+								Action: &corev1alpha1.Action{Template: corev1.PodTemplateSpec{Spec: corev1.PodSpec{Containers: []corev1.Container{{
+									Name:    "test",
+									Image:   "alpine",
+									Command: []string{"echo", "Hello Dave."},
+									EnvFrom: []corev1.EnvFromSource{{
+										ConfigMapRef: &corev1.ConfigMapEnvSource{LocalObjectReference: corev1.LocalObjectReference{Name: provisionedCM.Name}},
+									}},
+								}}}}},
 							}},
 						}},
 					}},
@@ -346,6 +355,43 @@ var _ = Describe("Play controller", func() {
 					return false
 				}
 				return true
+			}, timeout, interval).Should(BeTrue())
+
+			configMapLookupKey := types.NamespacedName{Name: fmt.Sprintf("%s-%s", provisionedCM.Name, play.Name), Namespace: play.Namespace}
+			createdConfigMap := &corev1.ConfigMap{}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, configMapLookupKey, createdConfigMap)
+				if err != nil {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+
+			jobLookupKey := types.NamespacedName{Name: fmt.Sprintf("%s-%s", play.AllFrames()[0].Name, play.Name), Namespace: play.Namespace}
+			createdJob := &batchv1.Job{}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, jobLookupKey, createdJob)
+				if err != nil {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+
+			createdJob.Status.Conditions = append(createdJob.Status.Conditions, batchv1.JobCondition{
+				Type: batchv1.JobComplete,
+			})
+			k8sClient.Status().Update(ctx, createdJob)
+
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, playLookupKey, createdPlay)
+				if err != nil {
+					return false
+				}
+
+				if createdPlay.Status.Phase == corev1alpha1.PlayPhaseComplete {
+					return true
+				}
+				return false
 			}, timeout, interval).Should(BeTrue())
 		})
 	})

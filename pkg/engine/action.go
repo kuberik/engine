@@ -30,6 +30,7 @@ func provisionedResourcesLayer(play *corev1alpha1.Play, screenplay string) kusto
 
 func generateFinalLayer(play *corev1alpha1.Play, layer kustomize.KustomizeLayer) ([]*resource.Resource, error) {
 	layer.Kustomization.NameSuffix = fmt.Sprintf("-%s", play.Name)
+	layer.Kustomization.Namespace = play.Namespace
 	rm, err := layer.Run()
 	if err != nil {
 		return nil, err
