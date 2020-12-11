@@ -29923,32 +29923,11 @@ spec:
                                   type: array
                                 name:
                                   type: string
-                                pass:
-                                  description: Condition describes a logical filter
-                                    which controls execution of the pipeline
-                                  items:
-                                    additionalProperties:
-                                      type: string
-                                    type: object
-                                  type: array
                               required:
                               - frames
                               - name
                               type: object
                             type: array
-                        type: object
-                      type: array
-                    vars:
-                      items:
-                        description: Var is a parametrizable variable for the screenplay
-                          shared between all jobs.
-                        properties:
-                          name:
-                            type: string
-                          value:
-                            type: string
-                        required:
-                        - name
                         type: object
                       type: array
                   required:

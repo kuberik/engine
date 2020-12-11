@@ -19,7 +19,9 @@ package v1alpha1
 import (
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -91,6 +93,17 @@ func (m *Movie) GenerateEventPlay(event Event) Play {
 		UID:        event.UID,
 	})
 	play.Name = fmt.Sprintf("%s-%s", m.Name, event.Name)
+	eventDataConfigMap := corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "event-data",
+		},
+		Data: event.Spec.Data,
+	}
+	play.Spec.Screenplays[0].Provision.Resources = append(play.Spec.Screenplays[0].Provision.Resources, runtime.RawExtension{Object: &eventDataConfigMap})
 	return play
 }
 

@@ -29,7 +29,6 @@ type PlaySpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	Screenplays []Screenplay `json:"screenplays"`
-	Vars        Vars         `json:"vars,omitempty"`
 }
 
 // PlayStatus defines the observed state of Play
