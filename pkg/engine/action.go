@@ -77,10 +77,10 @@ const (
 
 func actionLabels(play *corev1alpha1.Play, frameName string) labels.Set {
 	return map[string]string{
-		// TODO replace with frame name
+		// TODO: replace with frame name
 		"app.kubernetes.io/name":     frameName,
 		"app.kubernetes.io/instance": fmt.Sprintf("%s-%s", frameName, play.Name),
-		// TODO replace with actual version of kuberik
+		// TODO: replace with actual version of kuberik
 		"app.kubernetes.io/version":    os.Getenv("TODOVERSION"),
 		"app.kubernetes.io/component":  "action",
 		"app.kubernetes.io/part-of":    play.Name,
@@ -92,7 +92,7 @@ func newAction(play *corev1alpha1.Play, frameID string) batchv1.Job {
 	f := play.Frame(frameID)
 	e := f.Action
 
-	// TODO replace with owner reference
+	// TODO: replace with owner reference
 	annotations := map[string]string{
 		ActionAnnotationFrameID: frameID,
 	}

@@ -68,8 +68,8 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		Namespace: instance.Namespace,
 	}, movie)
 	if err != nil {
-		// TODO update status to error
-		// TODO this should not happen if event validation hook is deployed
+		// TODO: update status to error
+		// TODO: this should not happen if event validation hook is deployed
 		return reconcile.Result{}, err
 	}
 
@@ -92,8 +92,10 @@ func (r *EventReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func generatePlay(movie corev1alpha1.Movie) corev1alpha1.Play {
 	return corev1alpha1.Play{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:       movie.Namespace,
-			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(&movie, corev1alpha1.GroupVersion.WithKind(reflect.TypeOf(corev1alpha1.Movie{}).Name()))},
+			Namespace: movie.Namespace,
+			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(
+				&movie, corev1alpha1.GroupVersion.WithKind(reflect.TypeOf(corev1alpha1.Movie{}).Name()),
+			)},
 		},
 		Spec: movie.Spec.Template.Spec,
 	}
@@ -101,7 +103,9 @@ func generatePlay(movie corev1alpha1.Movie) corev1alpha1.Play {
 
 func generateEventPlay(movie corev1alpha1.Movie, event corev1alpha1.Event) corev1alpha1.Play {
 	play := generatePlay(movie)
-	play.OwnerReferences = append(play.OwnerReferences, *metav1.NewControllerRef(&event, corev1alpha1.GroupVersion.WithKind(reflect.TypeOf(corev1alpha1.Event{}).Name())))
+	play.OwnerReferences = append(play.OwnerReferences, *metav1.NewControllerRef(
+		&event, corev1alpha1.GroupVersion.WithKind(reflect.TypeOf(corev1alpha1.Event{}).Name())),
+	)
 	play.Name = fmt.Sprintf("%s-%s", movie.Name, event.Name)
 	eventDataConfigMap := corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -113,6 +117,9 @@ func generateEventPlay(movie corev1alpha1.Movie, event corev1alpha1.Event) corev
 		},
 		Data: event.Spec.Data,
 	}
-	play.Spec.Screenplays[0].Provision.Resources = append(play.Spec.Screenplays[0].Provision.Resources, runtime.RawExtension{Object: &eventDataConfigMap})
+	play.Spec.Screenplays[0].Provision.Resources = append(
+		play.Spec.Screenplays[0].Provision.Resources,
+		runtime.RawExtension{Object: &eventDataConfigMap},
+	)
 	return play
 }

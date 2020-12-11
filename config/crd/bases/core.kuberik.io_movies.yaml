@@ -41,7 +41,7 @@ spec:
             successfulJobsHistoryLimit:
               type: integer
             template:
-              description: TODO remove this
+              description: TODO: remove this
               properties:
                 metadata:
                   type: object

@@ -36,9 +36,8 @@ type PlayStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Frames        map[string]FrameStatus `json:"frames,omitempty"`
-	Phase         PlayPhaseType          `json:"phase,omitempty"`
-	VarsConfigMap string                 `json:"varsConfigMap,omitempty"`
+	Frames map[string]FrameStatus `json:"frames,omitempty"`
+	Phase  PlayPhaseType          `json:"phase,omitempty"`
 }
 
 // SetFrameStatus sets result of a frame

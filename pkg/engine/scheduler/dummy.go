@@ -27,7 +27,7 @@ func (s *DummyScheduler) Deprovision(resource []*resource.Resource) error {
 
 // Run implements Scheduler interface
 func (s *DummyScheduler) Run(job batchv1.Job) error {
-	// TODO replace hardcoded value
+	// TODO: replace hardcoded value
 	s.Play.Status.SetFrameStatus(job.Annotations["core.kuberik.io/frameID"], s.Result)
 	return nil
 }
