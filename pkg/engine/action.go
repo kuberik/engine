@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 
 	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
 	"github.com/kuberik/engine/pkg/engine/internal/kustomize"
@@ -120,13 +121,9 @@ func newAction(play *corev1alpha1.Play, frameID string) batchv1.Job {
 			Namespace:   play.Namespace,
 			Annotations: annotations,
 			Labels:      e.Template.Labels,
-			OwnerReferences: []metav1.OwnerReference{{
-				APIVersion: play.APIVersion,
-				Kind:       play.Kind,
-				Name:       play.Name,
-				UID:        play.UID,
-				Controller: &trueVal,
-			}},
+			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(
+				play, corev1alpha1.GroupVersion.WithKind(reflect.TypeOf(corev1alpha1.Play{}).Name())),
+			},
 		},
 		Spec: *e.DeepCopy(),
 	}
