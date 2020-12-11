@@ -17,11 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
-
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -62,49 +58,6 @@ type Movie struct {
 
 	Spec   MovieSpec   `json:"spec,omitempty"`
 	Status MovieStatus `json:"status,omitempty"`
-}
-
-func (m *Movie) generatePlay() Play {
-	return Play{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: m.Namespace,
-			OwnerReferences: []metav1.OwnerReference{{
-				APIVersion: m.APIVersion,
-				Kind:       m.Kind,
-				Name:       m.Name,
-				UID:        m.UID,
-			}},
-		},
-		Spec: m.Spec.Template.Spec,
-	}
-}
-func (m *Movie) GeneratePlay() Play {
-	play := m.generatePlay()
-	play.GenerateName = fmt.Sprintf("%s-", m.Name)
-	return play
-}
-
-func (m *Movie) GenerateEventPlay(event Event) Play {
-	play := m.generatePlay()
-	play.OwnerReferences = append(play.OwnerReferences, metav1.OwnerReference{
-		APIVersion: event.APIVersion,
-		Kind:       event.Kind,
-		Name:       event.Name,
-		UID:        event.UID,
-	})
-	play.Name = fmt.Sprintf("%s-%s", m.Name, event.Name)
-	eventDataConfigMap := corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "event-data",
-		},
-		Data: event.Spec.Data,
-	}
-	play.Spec.Screenplays[0].Provision.Resources = append(play.Spec.Screenplays[0].Provision.Resources, runtime.RawExtension{Object: &eventDataConfigMap})
-	return play
 }
 
 // +kubebuilder:object:root=true
