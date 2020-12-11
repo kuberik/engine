@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -28,6 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EventReconciler reconciles a Event object
@@ -64,14 +68,14 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		Namespace: instance.Namespace,
 	}, movie)
 	if err != nil {
-		// TODO update status to error
-		// TODO this should not happen if event validation hook is deployed
+		// TODO: update status to error
+		// TODO: this should not happen if event validation hook is deployed
 		return reconcile.Result{}, err
 	}
 
 	// TODO: test the GeneratePlay method
 	// TODO: test using operator-sdk e2e testing
-	p := movie.GenerateEventPlay(*instance)
+	p := generateEventPlay(*movie, *instance)
 	r.Client.Create(context.TODO(), &p)
 	if err != nil {
 		return reconcile.Result{Requeue: true}, err
@@ -83,4 +87,39 @@ func (r *EventReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1alpha1.Event{}).
 		Complete(r)
+}
+
+func generatePlay(movie corev1alpha1.Movie) corev1alpha1.Play {
+	return corev1alpha1.Play{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: movie.Namespace,
+			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(
+				&movie, corev1alpha1.GroupVersion.WithKind(reflect.TypeOf(corev1alpha1.Movie{}).Name()),
+			)},
+		},
+		Spec: movie.Spec.Template.Spec,
+	}
+}
+
+func generateEventPlay(movie corev1alpha1.Movie, event corev1alpha1.Event) corev1alpha1.Play {
+	play := generatePlay(movie)
+	play.OwnerReferences = append(play.OwnerReferences, *metav1.NewControllerRef(
+		&event, corev1alpha1.GroupVersion.WithKind(reflect.TypeOf(corev1alpha1.Event{}).Name())),
+	)
+	play.Name = fmt.Sprintf("%s-%s", movie.Name, event.Name)
+	eventDataConfigMap := corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "event-data",
+		},
+		Data: event.Spec.Data,
+	}
+	play.Spec.Screenplays[0].Provision.Resources = append(
+		play.Spec.Screenplays[0].Provision.Resources,
+		runtime.RawExtension{Object: &eventDataConfigMap},
+	)
+	return play
 }

@@ -33,8 +33,6 @@ import (
 	"github.com/kuberik/engine/pkg/randutils"
 
 	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PlayReconciler reconciles a Play object
@@ -82,18 +80,8 @@ func (r *PlayReconciler) reconcileCreated(instance *corev1alpha1.Play) (reconcil
 }
 
 func (r *PlayReconciler) reconcileInit(instance *corev1alpha1.Play) (reconcile.Result, error) {
-	err := r.provisionVarsConfigMap(instance)
-
-	if err != nil {
-		instance.Status.Phase = corev1alpha1.PlayPhaseError
-		if errUpdate := r.Client.Status().Update(context.TODO(), instance); errUpdate != nil {
-			return reconcile.Result{}, err
-		}
-		return reconcile.Result{}, err
-	}
-
 	r.populateRandomIDs(instance)
-	err = r.Client.Update(context.TODO(), instance)
+	err := r.Client.Update(context.TODO(), instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -139,28 +127,6 @@ func (r *PlayReconciler) populateRandomIDs(play *corev1alpha1.Play) {
 	for i, f := range frames {
 		f.ID = randomIDs[i]
 	}
-}
-
-func (r *PlayReconciler) provisionVarsConfigMap(instance *corev1alpha1.Play) error {
-	varsConfigMapName := fmt.Sprintf("%s-vars", instance.Name)
-	configMapValues := make(map[string]string)
-	for _, v := range instance.Spec.Vars {
-		configMapValues[v.Name] = *v.Value
-	}
-	varsConfigMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      varsConfigMapName,
-			Namespace: instance.Namespace,
-		},
-		Data: configMapValues,
-	}
-
-	err := r.Client.Create(context.TODO(), varsConfigMap)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-	instance.Status.VarsConfigMap = varsConfigMapName
-	return nil
 }
 
 func (r *PlayReconciler) updateStatus(play *corev1alpha1.Play) error {

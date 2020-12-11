@@ -29,7 +29,6 @@ type PlaySpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	Screenplays []Screenplay `json:"screenplays"`
-	Vars        Vars         `json:"vars,omitempty"`
 }
 
 // PlayStatus defines the observed state of Play
@@ -37,9 +36,8 @@ type PlayStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Frames        map[string]FrameStatus `json:"frames,omitempty"`
-	Phase         PlayPhaseType          `json:"phase,omitempty"`
-	VarsConfigMap string                 `json:"varsConfigMap,omitempty"`
+	Frames map[string]FrameStatus `json:"frames,omitempty"`
+	Phase  PlayPhaseType          `json:"phase,omitempty"`
 }
 
 // SetFrameStatus sets result of a frame

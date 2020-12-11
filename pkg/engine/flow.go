@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"encoding/json"
 	"fmt"
 
 	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
@@ -33,7 +34,7 @@ func NewFlow(scheduler scheduler.Scheduler) Flow {
 // This function should be called whenever a new Play event occurs
 func (f *Flow) Next(play *corev1alpha1.Play) error {
 	// Expand definition
-	populateVars(play, play.Status.VarsConfigMap)
+	expandProvisionedConfigMaps(play)
 	expandCopies(&play.Spec)
 	return f.playScreenplay(play, mainScreenplayName)
 }
@@ -48,7 +49,7 @@ func framesFinished(status *corev1alpha1.PlayStatus, frames []corev1alpha1.Frame
 }
 
 func (f *Flow) playScreenplay(play *corev1alpha1.Play, name string) error {
-	// TODO Run only if screenplay didn't start (i.e. there's no condition for screenplay in progress)
+	// TODO: Run only if screenplay didn't start (i.e. there's no condition for screenplay in progress)
 	if true {
 		provisionedResources, _ := generateProvisionedResources(play, name)
 		if err := f.Scheduler.Provision(provisionedResources); err != nil {
@@ -139,64 +140,66 @@ func expandCopies(playSpec *corev1alpha1.PlaySpec) {
 	}
 }
 
-func populateVars(play *corev1alpha1.Play, varsConfigMap string) {
-	if varsConfigMap == "" {
-		return
-	}
-	mountName := "kuberik-vars"
-	mountPath := "/kuberik/vars"
+func expandProvisionedConfigMaps(play *corev1alpha1.Play) {
+	mountName := "kuberik-cms"
+	mountPath := "/kuberik/cms"
 	frames := play.AllFrames()
-	for fi := range frames {
-		frames[fi].Action.Template.Spec.Volumes = append(
-			frames[fi].Action.Template.Spec.Volumes,
-			corev1.Volume{
-				Name: mountName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: varsConfigMap,
-						},
-					},
-				},
-			},
-		)
-		for ci := range frames[fi].Action.Template.Spec.Containers {
-			frames[fi].Action.Template.Spec.Containers[ci].EnvFrom = append(
-				frames[fi].Action.Template.Spec.Containers[ci].EnvFrom,
-				corev1.EnvFromSource{
-					ConfigMapRef: &corev1.ConfigMapEnvSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: varsConfigMap,
+	// TODO: KUB-75: this is gonna be wrong when there's nested screenplays
+	for _, cmRaw := range play.Spec.Screenplays[0].Provision.Resources {
+		cm := corev1.ConfigMap{}
+		json.Unmarshal(cmRaw.Raw, &cm)
+		for fi := range frames {
+			frames[fi].Action.Template.Spec.Volumes = append(
+				frames[fi].Action.Template.Spec.Volumes,
+				corev1.Volume{
+					Name: mountName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: cm.Name,
+							},
 						},
 					},
 				},
 			)
-			frames[fi].Action.Template.Spec.Containers[ci].VolumeMounts = append(
-				frames[fi].Action.Template.Spec.Containers[ci].VolumeMounts,
-				corev1.VolumeMount{
-					Name:      mountName,
-					MountPath: mountPath,
-				},
-			)
-		}
-		for ci := range frames[fi].Action.Template.Spec.InitContainers {
-			frames[fi].Action.Template.Spec.InitContainers[ci].EnvFrom = append(
-				frames[fi].Action.Template.Spec.InitContainers[ci].EnvFrom,
-				corev1.EnvFromSource{
-					ConfigMapRef: &corev1.ConfigMapEnvSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: varsConfigMap,
+			for ci := range frames[fi].Action.Template.Spec.Containers {
+				frames[fi].Action.Template.Spec.Containers[ci].EnvFrom = append(
+					frames[fi].Action.Template.Spec.Containers[ci].EnvFrom,
+					corev1.EnvFromSource{
+						ConfigMapRef: &corev1.ConfigMapEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: cm.Name,
+							},
 						},
 					},
-				},
-			)
-			frames[fi].Action.Template.Spec.InitContainers[ci].VolumeMounts = append(
-				frames[fi].Action.Template.Spec.InitContainers[ci].VolumeMounts,
-				corev1.VolumeMount{
-					Name:      mountName,
-					MountPath: mountPath,
-				},
-			)
+				)
+				frames[fi].Action.Template.Spec.Containers[ci].VolumeMounts = append(
+					frames[fi].Action.Template.Spec.Containers[ci].VolumeMounts,
+					corev1.VolumeMount{
+						Name:      mountName,
+						MountPath: mountPath,
+					},
+				)
+			}
+			for ci := range frames[fi].Action.Template.Spec.InitContainers {
+				frames[fi].Action.Template.Spec.InitContainers[ci].EnvFrom = append(
+					frames[fi].Action.Template.Spec.InitContainers[ci].EnvFrom,
+					corev1.EnvFromSource{
+						ConfigMapRef: &corev1.ConfigMapEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: cm.Name,
+							},
+						},
+					},
+				)
+				frames[fi].Action.Template.Spec.InitContainers[ci].VolumeMounts = append(
+					frames[fi].Action.Template.Spec.InitContainers[ci].VolumeMounts,
+					corev1.VolumeMount{
+						Name:      mountName,
+						MountPath: mountPath,
+					},
+				)
+			}
 		}
 	}
 }
