@@ -41,7 +41,8 @@ spec:
             successfulJobsHistoryLimit:
               type: integer
             template:
-              description: TODO: remove this
+              description: PlayTemplate defines a template of Play to be created from
+                a Movie
               properties:
                 metadata:
                   type: object
