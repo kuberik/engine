@@ -77,7 +77,7 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// TODO: test using operator-sdk e2e testing
 	p := generateEventPlay(*movie, *instance)
 	r.Client.Create(context.TODO(), &p)
-	if err != nil {
+	if err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{Requeue: true}, err
 	}
 	return reconcile.Result{}, nil
