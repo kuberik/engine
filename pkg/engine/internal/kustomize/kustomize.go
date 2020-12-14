@@ -68,7 +68,7 @@ func (kl *KustomizeLayer) Run() (resmap.ResMap, error) {
 }
 
 func (kl *KustomizeLayer) AddObjectRaw(raw []byte) {
-	kl.appendFile(layerResourceObjectsFile, []byte(fmt.Sprintf("---\n%s", raw)))
+	kl.appendFile(layerResourceObjectsFile, []byte(fmt.Sprintf("---\n%s\n", raw)))
 }
 func (kl *KustomizeLayer) AddObject(object interface{}) {
 	marshaled, _ := json.Marshal(object)

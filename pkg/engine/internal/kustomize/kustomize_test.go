@@ -2,6 +2,7 @@ package kustomize
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -16,26 +17,32 @@ kind: ConfigMap
 metadata:
   name: foo
     `))
+	kl.AddObjectRaw([]byte(`
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bar
+    `))
 
 	kl.Kustomization.NameSuffix = "-bar"
 	rm, err := kl.Run()
 	if err != nil {
 		t.Fatalf("Kustomize failed: %s", err)
 	}
-
-	var configMapFound bool
-	for _, r := range rm.Resources() {
-		switch r.GetKind() {
-		case "ConfigMap":
-			configMapFound = true
-			if want := "foo-bar"; r.GetName() != want {
-				t.Errorf("Want '%s' name for ConfigMap, but got %s", want, r.GetName())
+	for _, cmName := range []string{"foo", "bar"} {
+		var configMapFound bool
+		for _, r := range rm.Resources() {
+			switch r.GetKind() {
+			case "ConfigMap":
+				if want := fmt.Sprintf("%s-bar", cmName); r.GetName() == want {
+					configMapFound = true
+				}
 			}
 		}
-	}
 
-	if !configMapFound {
-		t.Error("Wanted ConfigMap not found")
+		if !configMapFound {
+			t.Errorf("Wanted ConfigMap %s not found", cmName)
+		}
 	}
 }
 
