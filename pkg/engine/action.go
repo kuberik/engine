@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"reflect"
 
 	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
 	"github.com/kuberik/engine/pkg/engine/internal/kustomize"
+	"github.com/kuberik/engine/pkg/kubeutils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -117,13 +117,11 @@ func newAction(play *corev1alpha1.Play, frameID string) batchv1.Job {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			// maximum string for job name is 63 characters.
-			Name:        f.Name,
-			Namespace:   play.Namespace,
-			Annotations: annotations,
-			Labels:      e.Template.Labels,
-			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(
-				play, corev1alpha1.GroupVersion.WithKind(reflect.TypeOf(corev1alpha1.Play{}).Name())),
-			},
+			Name:            f.Name,
+			Namespace:       play.Namespace,
+			Annotations:     annotations,
+			Labels:          e.Template.Labels,
+			OwnerReferences: []metav1.OwnerReference{kubeutils.OwnerReference(play)},
 		},
 		Spec: *e.DeepCopy(),
 	}
