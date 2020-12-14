@@ -69,7 +69,7 @@ spec:
                       claimName: src
                   containers:
                   - name: clone
-                    image: &golang_image golang:1.14
+                    image: &golang_image golang:1.15
                     command: [/scripts/git-clone.sh]
                     volumeMounts:
                     - *scripts_volume_mount
