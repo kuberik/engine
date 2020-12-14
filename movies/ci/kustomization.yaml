@@ -7,10 +7,9 @@ configMapGenerator:
   files:
   - github-status-update.sh
   - git-clone.sh
-  - generate-kubeconfig.sh
-  - kuberik-ci-test.sh
+  - kaniko-publish.sh
 
 generatorOptions:
   disableNameSuffixHash: true
 
-namespace: kuberik
+namespace: kuberik-ci

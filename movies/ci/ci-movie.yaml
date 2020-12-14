@@ -22,50 +22,38 @@ spec:
       screenplays:
       - name: main
         provision:
-        - apiVersion: v1
-          kind: PersistentVolumeClaim
-          metadata:
-            name: &src-pvc src
-          spec:
-            accessModes: [ "ReadWriteMany" ]
-            resources:
-              requests:
-                storage: 2Gi
-            storageClass: nfs
-        templates:
-          pod:
-            volumes:
-            - name: &src-volume src
-              persistentVolumeClaim:
-                claimName: *src-pvc
-            - name: &scripts-volume
-              configMap: {name: engine-ci-scripts, defaultMode: 0744}
-          container:
-            volumeMounts:
-            - name: *src-volume
-              mountPath: &src-dir "/src"
-            - name: *scripts-volume
-              mountPath: /scripts
-            workingDir: *src-dir
+          resources:
+          - apiVersion: v1
+            kind: PersistentVolumeClaim
+            metadata:
+              name: &src_pvc src
+            spec:
+              accessModes: [ "ReadWriteOnce" ]
+              resources:
+                requests:
+                  storage: 1Gi
         credits:
           opening:
           - name: status-pending
-            frames:
-              - name: status-pending
-                action: &github-status-update-action
-                  template:
-                    spec:
-                      containers:
-                      - name: status-update
-                        image: cloudposse/github-status-updater
-                        envFrom:
-                        - secretRef: {name: github-status-update}
-                        command: [/scripts/github-status-update.sh]
+            action: &github_status_update_action
+              template:
+                spec:
+                  volumes:
+                  - &scripts_volume
+                    name: &scripts_volume_name scripts
+                    configMap: {name: engine-ci-scripts, defaultMode: 0744}
+                  containers:
+                  - name: status-update
+                    image: cloudposse/github-status-updater
+                    envFrom: [secretRef: {name: github-credentials}]
+                    volumeMounts:
+                    - &scripts_volume_mount
+                      name: *scripts_volume_name
+                      mountPath: /scripts
+                    command: [/scripts/github-status-update.sh]
           closing:
           - name: status-finish
-            frames:
-              - name: status-finish
-                action: *github-status-update-action
+            action: *github_status_update_action
         scenes:
         - name: clone
           frames:
@@ -73,30 +61,59 @@ spec:
             action:
               template:
                 spec:
+                  volumes:
+                  - *scripts_volume
+                  - &src_volume
+                    name: src
+                    persistentVolumeClaim:
+                      claimName: src
                   containers:
                   - name: clone
-                    image: &golang-image golang:1.14
+                    image: &golang_image golang:1.14
                     command: [/scripts/git-clone.sh]
+                    volumeMounts:
+                    - *scripts_volume_mount
+                    - &src_volume_mount
+                      name: *src_pvc
+                      mountPath: &src_mount_path "/src"
+                    workingDir: *src_mount_path
         - name: build
           frames:
           - name: build
             action:
               template:
                 spec:
+                  volumes: [*src_volume]
                   containers:
                   - name: build
-                    image: *golang-image
-                    command: [make, build-operator]
+                    image: *golang_image
+                    command: [make]
+                    volumeMounts: [*src_volume_mount]
+                    workingDir: *src_mount_path
         - name: test
           frames:
           - name: test
             action:
               template:
                 spec:
-                  serviceAccount: kuberik-ci
+                  volumes: [*src_volume]
                   containers:
                   - name: test
-                    image: *golang-image
-                    command: [/scripts/kuberik-ci-test.sh]
-                    - name: test-scripts
-                      mountPath: /scripts
+                    image: *golang_image
+                    command: [make, test]
+                    volumeMounts: [*src_volume_mount]
+                    workingDir: *src_mount_path
+        - name: publish
+          frames:
+          - name: publish
+            action:
+              template:
+                spec:
+                  volumes: [*src_volume, *scripts_volume]
+                  containers:
+                  - name: publish
+                    image: gcr.io/kaniko-project/executor:latest
+                    command: [/scripts/kaniko-publish.sh]
+                    envFrom: [{secretRef: {name: ci-docker-publish}}]
+                    volumeMounts: [*src_volume_mount, *scripts_volume_mount]
+                    workingDir: *src_mount_path
