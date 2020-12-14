@@ -12,11 +12,8 @@ else
     export GITHUB_DESCRIPTION="kuberik CI pipeline finished with ${GITHUB_STATE}"
 fi
 
-OWNER_REPO=$(echo ${GIT_URL} | sed -r 's/https:\/\/github.com\/(.+)\/([0-9a-zA-Z_-]+).+/\1\/\2/')
-export GITHUB_OWNER=$(echo ${OWNER_REPO} | cut -d'/' -f 1)
-export GITHUB_REPO=$(echo ${OWNER_REPO} | cut -d'/' -f 2)
-export GITHUB_REF=${GIT_OID}
+export GITHUB_REF=${GIT_COMMIT_HASH}
 export GITHUB_ACTION=update_state
 export GITHUB_CONTEXT="kuberik-ci"
 
-github-status-updater
+exec github-status-updater
