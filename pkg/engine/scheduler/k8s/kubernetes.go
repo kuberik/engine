@@ -60,7 +60,7 @@ func (ks *KubernetesScheduler) deleteObjects(objects ...controllerutil.Object) e
 }
 
 func (ks *KubernetesScheduler) Deprovision(resources []*resource.Resource) error {
-	return ks.createObjects(resourcesToObjects(resources...)...)
+	return ks.deleteObjects(resourcesToObjects(resources...)...)
 }
 
 func (ks *KubernetesScheduler) Run(job batchv1.Job) error {
