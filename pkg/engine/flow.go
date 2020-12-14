@@ -3,6 +3,8 @@ package engine
 import (
 	"encoding/json"
 	"fmt"
+	"path"
+	"reflect"
 
 	corev1alpha1 "github.com/kuberik/engine/api/v1alpha1"
 	"github.com/kuberik/engine/pkg/engine/scheduler"
@@ -148,6 +150,9 @@ func expandProvisionedConfigMaps(play *corev1alpha1.Play) {
 	for _, cmRaw := range play.Spec.Screenplays[0].Provision.Resources {
 		cm := corev1.ConfigMap{}
 		json.Unmarshal(cmRaw.Raw, &cm)
+		if cm.Kind != reflect.TypeOf(cm).Name() {
+			continue
+		}
 		for fi := range frames {
 			frames[fi].Action.Template.Spec.Volumes = append(
 				frames[fi].Action.Template.Spec.Volumes,
@@ -177,7 +182,7 @@ func expandProvisionedConfigMaps(play *corev1alpha1.Play) {
 					frames[fi].Action.Template.Spec.Containers[ci].VolumeMounts,
 					corev1.VolumeMount{
 						Name:      mountName,
-						MountPath: mountPath,
+						MountPath: path.Join(mountPath, cm.Name),
 					},
 				)
 			}
@@ -196,7 +201,7 @@ func expandProvisionedConfigMaps(play *corev1alpha1.Play) {
 					frames[fi].Action.Template.Spec.InitContainers[ci].VolumeMounts,
 					corev1.VolumeMount{
 						Name:      mountName,
-						MountPath: mountPath,
+						MountPath: path.Join(mountPath, cm.Name),
 					},
 				)
 			}
