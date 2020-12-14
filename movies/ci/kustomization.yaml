@@ -7,7 +7,7 @@ configMapGenerator:
   files:
   - github-status-update.sh
   - git-clone.sh
-  - kaniko-publish.sh
+  - docker-login.sh
 
 generatorOptions:
   disableNameSuffixHash: true

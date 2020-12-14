@@ -109,11 +109,22 @@ spec:
             action:
               template:
                 spec:
-                  volumes: [*src_volume, *scripts_volume]
+                  volumes: [*src_volume, *scripts_volume, {name: &kaniko_docker_volume kaniko-docker, emptyDir: {}}]
+                  initContainers:
+                  - name: kaniko-config
+                    image: docker
+                    command: [/scripts/docker-login.sh]
+                    envFrom: [{secretRef: {name: ci-docker-publish}}]
+                    volumeMounts:
+                    - *scripts_volume_mount
+                    - &kaniko_docker_volume_mount
+                      name: *kaniko_docker_volume
+                      mountPath: /kaniko/.docker
                   containers:
                   - name: publish
                     image: gcr.io/kaniko-project/executor:latest
-                    command: [/scripts/kaniko-publish.sh]
+                    args:
+                    - --context=dir:///src
+                    - --destination=$(DOCKER_REGISTRY_SERVER)/$(GITHUB_OWNER)/$(GITHUB_REPO):$(GIT_COMMIT_HASH)
                     envFrom: [{secretRef: {name: ci-docker-publish}}]
-                    volumeMounts: [*src_volume_mount, *scripts_volume_mount]
-                    workingDir: *src_mount_path
+                    volumeMounts: [*src_volume_mount, *kaniko_docker_volume_mount]
