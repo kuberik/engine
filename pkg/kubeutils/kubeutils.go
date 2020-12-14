@@ -20,10 +20,15 @@ var (
 	falseVal = false
 )
 
-func OwnerReference(owner metav1.Object) metav1.OwnerReference {
+func ControllerReference(owner metav1.Object) metav1.OwnerReference {
 	ref := *metav1.NewControllerRef(
 		owner, corev1alpha1.GroupVersion.WithKind(reflect.ValueOf(owner).Elem().Type().Name()),
 	)
+	return ref
+}
+
+func OwnerReference(owner metav1.Object) metav1.OwnerReference {
+	ref := ControllerReference(owner)
 	ref.Controller = &falseVal
 	return ref
 }

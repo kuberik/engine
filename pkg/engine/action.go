@@ -121,7 +121,7 @@ func newAction(play *corev1alpha1.Play, frameID string) batchv1.Job {
 			Namespace:       play.Namespace,
 			Annotations:     annotations,
 			Labels:          e.Template.Labels,
-			OwnerReferences: []metav1.OwnerReference{kubeutils.OwnerReference(play)},
+			OwnerReferences: []metav1.OwnerReference{kubeutils.ControllerReference(play)},
 		},
 		Spec: *e.DeepCopy(),
 	}
