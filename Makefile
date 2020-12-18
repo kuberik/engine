@@ -58,6 +58,16 @@ deploy: manifests kustomize
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
+	# workaround for CRD issue with k8s 1.18 & controller-gen 0.3
+	# ref: https://github.com/kubernetes/kubernetes/issues/91395
+	sed -i.sedbak -e 's/\(\( *\)- protocol\)//' \
+	  config/crd/bases/core.kuberik.io_movies.yaml \
+	  config/crd/bases/core.kuberik.io_plays.yaml
+	sed -i.sedbak -e 's/\(\( *\)- containerPort\)/\1\n\2- protocol/' \
+	  config/crd/bases/core.kuberik.io_movies.yaml \
+	  config/crd/bases/core.kuberik.io_plays.yaml
+	find config/crd/bases -name '*.sedbak' -delete
+
 # Run go fmt against code
 fmt:
 	go fmt ./...
