@@ -11,6 +11,7 @@ spec:
     repo:
       name: engine
       owner: kuberik
+    tokenSecret: github-credentials
 ---
 apiVersion: core.kuberik.io/v1alpha1
 kind: Movie
