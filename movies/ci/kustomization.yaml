@@ -1,6 +1,6 @@
 ---
 resources:
-- git@github.com:kuberik/genres//ci/make
+- github.com/kuberik/genres//ci/make
 
 patchesStrategicMerge:
 - screener-config.yaml
