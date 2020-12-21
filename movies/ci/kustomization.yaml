@@ -1,15 +1,19 @@
 ---
 resources:
-- ci-movie.yaml
+- git@github.com:kuberik/genres//ci/make
 
-configMapGenerator:
-- name: engine-ci-scripts
-  files:
-  - github-status-update.sh
-  - git-clone.sh
-  - docker-login.sh
+patchesStrategicMerge:
+- screener-config.yaml
 
-generatorOptions:
-  disableNameSuffixHash: true
-
+namePrefix: engine-
 namespace: kuberik-ci
+
+images:
+  - &image_template
+    name: clone
+    newName: golang
+    newTag: "1.15"
+  - <<: *image_template
+    name: build
+  - <<: *image_template
+    name: test
