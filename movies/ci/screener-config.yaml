@@ -1,0 +1,10 @@
+---
+apiVersion: core.kuberik.io/v1alpha1
+kind: Screener
+metadata:
+  name: ci
+spec:
+  config:
+    repo:
+      name: engine
+      owner: kuberik
