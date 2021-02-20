@@ -1,12 +1,12 @@
 # kuberik
 
-<img src="./docs/.vuepress/public/assets/img/logo.svg" height=100 />
+<img alt="Kuberik Logo" src="./docs/.vuepress/public/assets/img/logo.svg" height=100 />
 
 ----
 
 Kuberik is an extensible pipeline engine for Kubernetes. It enables
 execution of pipelines on top of Kubernetes by leveraging full expressiveness
-of Kubernetes API.
+of Kubernetes API. More information on [the Kuberik website(https://kuberik.io/)].
 
 ----
 
