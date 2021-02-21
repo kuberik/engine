@@ -37,3 +37,63 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+    - core.kuberik.io
+  resources:
+    - events
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - core.kuberik.io
+  resources:
+    - events/status
+  verbs:
+    - get
+    - patch
+    - update
+- apiGroups:
+    - core.kuberik.io
+  resources:
+    - movies
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - core.kuberik.io
+  resources:
+    - movies/status
+  verbs:
+    - get
+    - patch
+    - update
+- apiGroups:
+    - core.kuberik.io
+  resources:
+    - plays
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - core.kuberik.io
+  resources:
+    - plays/status
+  verbs:
+    - get
+    - patch
+    - update

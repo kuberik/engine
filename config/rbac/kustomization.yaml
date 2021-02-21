@@ -10,6 +10,9 @@ resources:
 - auth_proxy_role.yaml
 - auth_proxy_role_binding.yaml
 - auth_proxy_client_clusterrole.yaml
-
+- movie_viewer_role.yaml
+- movie_viewer_role_binding.yaml
+- play_viewer_role.yaml
+- play_viewer_role_binding.yaml
 patchesStrategicMerge:
 - role-patch.yaml

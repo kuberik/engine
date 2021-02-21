@@ -1,7 +1,9 @@
 resources:
 - manager.yaml
 
-
 images:
 - name: controller
   newName: quay.io/kuberik/engine
+  newTag: d7647904df0ac58f715c554c37653baf5f65d993
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization

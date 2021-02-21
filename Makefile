@@ -43,7 +43,7 @@ run: generate fmt vet manifests
 
 # Install CRDs into a cluster
 install: manifests kustomize
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+	$(KUSTOMIZE) build config/crd | kubectl apply --server-side=true --force-conflicts -f -
 
 # Uninstall CRDs from a cluster
 uninstall: manifests kustomize
@@ -52,11 +52,15 @@ uninstall: manifests kustomize
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/default | kubectl apply --server-side=true --force-conflicts -f -
+
+# UnDeploy controller from the configured Kubernetes cluster in ~/.kube/config
+undeploy:
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 	# workaround for CRD issue with k8s 1.18 & controller-gen 0.3
 	# ref: https://github.com/kubernetes/kubernetes/issues/91395
